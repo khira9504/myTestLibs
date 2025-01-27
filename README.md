@@ -1,2 +1,2 @@
 # myTestLibs
-This repo is my sample collection
+This repo is my sample collections
