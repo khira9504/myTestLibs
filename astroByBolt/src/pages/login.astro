@@ -1,0 +1,15 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import Auth from '../components/Auth.astro';
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Auth />
+  </body>
+</html>

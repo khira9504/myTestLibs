@@ -1,0 +1,93 @@
+---
+import { supabase } from '../lib/supabase';
+---
+
+<div class="flex flex-col items-center justify-center min-h-screen py-2">
+  <div class="p-8 bg-white rounded-lg shadow-md w-96">
+    <h2 class="text-2xl font-bold mb-6 text-center">ログイン / 新規登録</h2>
+    <form id="auth-form" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">メールアドレス</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">パスワード</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+      </div>
+      <div class="flex space-x-4">
+        <button
+          type="submit"
+          data-action="login"
+          class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+        >
+          ログイン
+        </button>
+        <button
+          type="submit"
+          data-action="signup"
+          class="flex-1 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+        >
+          新規登録
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const form = document.getElementById('auth-form');
+  const errorDisplay = document.createElement('div');
+  errorDisplay.className = 'text-red-500 text-sm mt-2';
+  form?.appendChild(errorDisplay);
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorDisplay.textContent = '';
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const action = (e.submitter as HTMLButtonElement).dataset.action;
+
+    try {
+      let result;
+      if (action === 'signup') {
+        result = await supabase.auth.signUp({
+          email,
+          password,
+        });
+      } else {
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      }
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (action === 'signup') {
+        alert('確認メールを送信しました。');
+      } else {
+        window.location.href = '/';
+      }
+    } catch (error: any) {
+      errorDisplay.textContent = error.message;
+    }
+  });
+</script>
