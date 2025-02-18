@@ -8,6 +8,7 @@
   },
   "permissions" : [
     "contextMenus",
-    "scripting"
+    "scripting",
+    "offscreen"
   ]
 }
