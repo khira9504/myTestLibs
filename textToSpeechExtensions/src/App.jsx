@@ -7,15 +7,23 @@ function App() {
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      function: function() {
-        if(location.href.toString() == "https://mail.google.com/mail/u/0/#settings/accounts") {
-          const elements = document.querySelectorAll('*');
-          const filterElements = Array.from(elements).filter((element)=> element.textContent == "メールを今すぐ確認する");
-          filterElements.forEach(elm => {
-            elm.click();
-          });
-        } else {
-          window.open("https://mail.google.com/mail/u/0/#settings/accounts");
+      function: async function(text) {
+        try {
+          const response = await fetch(
+            `https://deprecatedapis.tts.quest/v2/voicevox/audio/?key=${'a39556P567y4o-5'}&speaker=1&pitch=0&intonationScale=1&speed=1.2&text=${encodeURIComponent(
+              text
+            )}`
+          );
+      
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          };
+      
+          const blob = await response.blob();
+          const audio = new Audio(URL.createObjectURL(blob));
+          await audio.play();
+        } catch (error) {
+          console.error('Failed to fetch or play audio:', error); 
         };
       },
     });
@@ -29,4 +37,4 @@ function App() {
   );
 };
 
-export default App
+export default App;
