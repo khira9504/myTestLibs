@@ -16,17 +16,12 @@ chrome.contextMenus.onClicked.addListener(async function(info, tab) {
   }
   
   const blob = await response.blob();
-  console.log(blob);
-  
-  const audioUrl = reader.readAsDataURL(blob);
-  console.log(audioUrl);
-
-  const audio = new Audio(audioUrl);
-  console.log(audio);
-  
-  audio.onended = () => {
-    URL.revokeObjectURL(audioUrl);
+  reader.readAsDataURL(blob);
+  reader.onload = async function() {
+    // これ以降がエラーになる
+    console.log(reader.result);
+    // const audio = await new Audio(reader.result);
+    const audio = reader.result;
+    audio.play();
   };
-  
-  await audio.play();
 });
