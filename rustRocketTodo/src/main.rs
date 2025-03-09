@@ -1,14 +1,179 @@
 #[macro_use] extern crate rocket;
 
-// getルートのハンドラーを示すマクロ
+use rocket::fs::NamedFile;
+use rocket::serde::json::Json;
+use rocket::http::{Cookie, CookieJar, Status};
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
+use bcrypt::{hash, verify, DEFAULT_COST};
+
+mod schema;
+mod models;
+
 #[get("/")]
-// index関数の返り値が文字列を示す
-fn index() -> &'static str {
-  "Hello, world from Rocket!"
+async fn serve_index() -> Option<NamedFile> {
+    NamedFile::open("static/index.html").await.ok()
 }
 
-// このlaunchアトリビュート付きのrocket関数はアプリのエンドポイント
+#[get("/tasks")]
+fn get_tasks(cookies: &CookieJar<'_>) -> Result<Json<Vec<models::Task>>, Status> {
+    // 認証済みかチェック
+    let current_username = match cookies.get("username") {
+        Some(cookie) => cookie.value().to_string(),
+        None => return Err(Status::Unauthorized)
+    };
+
+    use crate::schema::tasks::dsl::*;
+
+    let mut connection = establish_connection();
+    // ログイン中ユーザーのタスクのみ取得
+    let results = tasks
+        .filter(username.eq(&current_username))
+        .load::<models::Task>(&mut connection)
+        .expect("Error loading tasks");
+    
+    Ok(Json(results))
+}
+
+#[post("/tasks", format = "json", data = "<new_task>")]
+fn create_task(new_task: Json<models::NewTask>, cookies: &CookieJar<'_>) -> Result<Json<models::Task>, Status> {
+    let current_username = match cookies.get("username") {
+        Some(cookie) => cookie.value().to_string(),
+        None => return Err(Status::Unauthorized)
+    };
+
+    use crate::schema::tasks::dsl::*;
+    let mut connection = establish_connection();
+    
+    // 受け取ったデータにユーザー名を補完
+    let mut new_task_data = new_task.into_inner();
+    new_task_data.username = &current_username;
+
+    diesel::insert_into(tasks)
+        .values(&new_task_data)
+        .execute(&mut connection)
+        .expect("Error inserting new task");
+
+    // 挿入直後のタスクを取得
+    let inserted_task = tasks
+        .filter(username.eq(&current_username))
+        .order(id.desc())
+        .first::<models::Task>(&mut connection)
+        .unwrap();
+    
+    Ok(Json(inserted_task))
+}
+
+#[put("/tasks/<task_id>", format = "json", data = "<task_update>")]
+fn update_task(task_id: i32, task_update: Json<models::NewTask>, cookies: &CookieJar<'_>) -> Result<&'static str, Status> {
+    let current_username = match cookies.get("username") {
+        Some(cookie) => cookie.value().to_string(),
+        None => return Err(Status::Unauthorized)
+    };
+
+    use crate::schema::tasks::dsl::*;
+    let mut connection = establish_connection();
+
+    // まずユーザーが所有するタスクかチェック
+    let task_count: i64 = tasks
+        .filter(id.eq(task_id))
+        .filter(username.eq(&current_username))
+        .count()
+        .get_result(&mut connection)
+        .expect("Error counting tasks");
+
+    if task_count == 0 {
+        return Err(Status::Forbidden);
+    }
+    
+    // ユーザー名をセット
+    let mut task_data = task_update.into_inner();
+    task_data.username = &current_username;
+
+    diesel::update(tasks.find(task_id))
+        .set((
+            title.eq(task_data.title), 
+            done.eq(task_data.done)
+        ))
+        .execute(&mut connection)
+        .expect("Error updating task");
+    
+    Ok("Task updated")
+}
+
+#[delete("/tasks/<task_id>")]
+fn delete_task(task_id: i32, cookies: &CookieJar<'_>) -> Result<&'static str, Status> {
+    let current_username = match cookies.get("username") {
+        Some(cookie) => cookie.value().to_string(),
+        None => return Err(Status::Unauthorized)
+    };
+
+    use crate::schema::tasks::dsl::*;
+    let mut connection = establish_connection();
+
+    // 所有権をチェック
+    let task_count: i64 = tasks
+        .filter(id.eq(task_id))
+        .filter(username.eq(&current_username))
+        .count()
+        .get_result(&mut connection)
+        .expect("Error counting tasks");
+
+    if task_count == 0 {
+        return Err(Status::Forbidden);
+    }
+
+    diesel::delete(tasks.find(task_id))
+        .execute(&mut connection)
+        .expect("Error deleting task");
+    
+    Ok("Task deleted")
+}
+
+#[post("/register", format = "json", data = "<user>")]
+fn register(user: Json<models::NewUser>) -> &'static str {
+    use crate::schema::users::dsl::*;
+    let mut connection = establish_connection();
+
+    // パスワードをハッシュ化
+    let hashed_pw = hash::<&str>(user.password, DEFAULT_COST).expect("Failed to hash password");
+    let new_user = models::NewUser {
+        username: &user.username,
+        password: &hashed_pw,
+    };
+
+    match diesel::insert_into(users).values(&new_user).execute(&mut connection) {
+        Ok(_) => "User registered successfully",
+        Err(_) => "Failed to register user",
+    }
+}
+
+#[post("/login", format = "json", data = "<login_data>")]
+fn login(login_data: Json<models::LoginData>, cookies: &CookieJar<'_>) -> &'static str {
+    use crate::schema::users::dsl::*;
+    let mut connection = establish_connection();
+    let login = login_data.into_inner();
+
+    // データベース上のユーザー取得
+    let result = users.find(&login.username).first::<models::User>(&mut connection);
+    if let Ok(user_record) = result {
+        // パスワードハッシュ検証
+        if verify(&login.password, &user_record.password).unwrap_or(false) {
+            cookies.add(Cookie::new("username", login.username));
+            return "Login successful";
+        }
+    }
+    "Invalid username or password"
+}
+
 #[launch]
 fn rocket() -> _ {
-  rocket::build().mount("/", routes![index])
+    rocket::build().mount("/", routes![
+        serve_index, get_tasks, create_task, update_task, delete_task, register, login
+    ])
+}
+
+fn establish_connection() -> SqliteConnection {
+    SqliteConnection::establish("./todo.db")
+        .unwrap_or_else(|_| panic!("Error connecting to database"))
 }
