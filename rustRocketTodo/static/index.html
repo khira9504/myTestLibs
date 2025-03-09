@@ -40,7 +40,7 @@
       </div>
       <button id="login-btn" class="btn">ログイン</button>
       <p id="login-error" class="error hidden"></p>
-      <p>アカウントをお持ちでない方は <a href="#" id="show-register">新規登録</a> へ</p>
+      <p>アカウントをお持ちでない場合は、<a href="#" id="show-register">新規登録</a>してください</p>
     </div>
     
     <div id="register-form" class="auth-form hidden">
@@ -55,7 +55,7 @@
       </div>
       <button id="register-btn" class="btn">登録</button>
       <p id="register-error" class="error hidden"></p>
-      <p>すでにアカウントをお持ちの方は <a href="#" id="show-login">ログイン</a> へ</p>
+      <p>すでにアカウントをお持ちの場合は、<a href="#" id="show-login">ログイン</a>してください</p>
     </div>
   </div>
   
@@ -74,28 +74,30 @@
   </div>
 
   <script>
-    // 認証状態をチェック
+    // 認証状態の確認
     function checkAuth() {
       const username = getCookie('username');
       if (username) {
+        // ログイン済み
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('main-container').style.display = 'block';
         document.getElementById('welcome-message').textContent = `${username}さん、こんにちは！`;
         loadTasks();
       } else {
+        // 未ログイン
         document.getElementById('auth-container').style.display = 'block';
         document.getElementById('main-container').style.display = 'none';
       }
     }
     
-    // Cookie の取得
+    // Cookieの取得
     function getCookie(name) {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop().split(';').shift();
     }
     
-    // タスクを取得して表示
+    // タスクの読み込み
     async function loadTasks() {
       try {
         const res = await fetch('/tasks');
@@ -120,7 +122,7 @@
       }
     }
     
-    // タスクの完了状態切り替え
+    // タスクの切り替え
     async function toggleTask(id, done) {
       try {
         const taskElement = document.querySelector(`li[data-id="${id}"]`);
@@ -132,19 +134,23 @@
           body: JSON.stringify({ title, done })
         });
         
-        taskElement.classList.toggle('done', done);
+        if (done) {
+          taskElement.classList.add('done');
+        } else {
+          taskElement.classList.remove('done');
+        }
       } catch (error) {
-        console.error('タスク更新に失敗しました：', error);
+        console.error('タスクの更新に失敗しました：', error);
       }
     }
     
-    // タスク削除
+    // タスクの削除
     async function deleteTask(id) {
       try {
         await fetch(`/tasks/${id}`, { method: 'DELETE' });
         loadTasks();
       } catch (error) {
-        console.error('タスク削除に失敗しました：', error);
+        console.error('タスクの削除に失敗しました：', error);
       }
     }
     
@@ -164,6 +170,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
+        
         const text = await response.text();
         
         if (text === 'Login successful') {
@@ -193,6 +200,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
+        
         const text = await response.text();
         
         if (text === 'User registered successfully') {
@@ -209,21 +217,21 @@
       }
     }
     
-    // エラーメッセージ表示
+    // エラーメッセージの表示
     function showError(elementId, message) {
       const errorElement = document.getElementById(elementId);
       errorElement.textContent = message;
       errorElement.classList.remove('hidden');
     }
     
-    // ログインフォーム表示
+    // ログインフォームの表示
     function showLoginForm() {
       document.getElementById('register-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('login-error').classList.add('hidden');
     }
     
-    // 登録フォーム表示
+    // 登録フォームの表示
     function showRegisterForm() {
       document.getElementById('login-form').classList.add('hidden');
       document.getElementById('register-form').classList.remove('hidden');
@@ -236,36 +244,39 @@
       checkAuth();
     }
     
-    // イベントリスナー設定
+    // イベントリスナー
     document.getElementById('show-register').addEventListener('click', function(e) {
       e.preventDefault();
       showRegisterForm();
     });
+    
     document.getElementById('show-login').addEventListener('click', function(e) {
       e.preventDefault();
       showLoginForm();
     });
+    
     document.getElementById('login-btn').addEventListener('click', login);
     document.getElementById('register-btn').addEventListener('click', register);
     document.getElementById('logout-btn').addEventListener('click', logout);
+    
     document.getElementById('add-task-btn').addEventListener('click', async () => {
       const title = document.getElementById('new-task-title').value;
       if (!title) return;
       
       try {
-        await fetch('/tasks', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ title, done: false })
+        await fetch('/tasks', { 
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify({ title, done: false }) 
         });
         document.getElementById('new-task-title').value = '';
         loadTasks();
       } catch (error) {
-        console.error('タスク追加に失敗しました：', error);
+        console.error('タスクの追加に失敗しました：', error);
       }
     });
     
-    // 初期表示
+    // 初期化
     checkAuth();
   </script>
 </body>

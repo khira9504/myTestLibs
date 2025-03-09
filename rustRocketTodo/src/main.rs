@@ -17,7 +17,6 @@ async fn serve_index() -> Option<NamedFile> {
 
 #[get("/tasks")]
 fn get_tasks(cookies: &CookieJar<'_>) -> Result<Json<Vec<models::Task>>, Status> {
-    // 認証済みかチェック
     let current_username = match cookies.get("username") {
         Some(cookie) => cookie.value().to_string(),
         None => return Err(Status::Unauthorized)
@@ -26,7 +25,6 @@ fn get_tasks(cookies: &CookieJar<'_>) -> Result<Json<Vec<models::Task>>, Status>
     use crate::schema::tasks::dsl::*;
 
     let mut connection = establish_connection();
-    // ログイン中ユーザーのタスクのみ取得
     let results = tasks
         .filter(username.eq(&current_username))
         .load::<models::Task>(&mut connection)
@@ -45,7 +43,6 @@ fn create_task(new_task: Json<models::NewTask>, cookies: &CookieJar<'_>) -> Resu
     use crate::schema::tasks::dsl::*;
     let mut connection = establish_connection();
     
-    // 受け取ったデータにユーザー名を補完
     let mut new_task_data = new_task.into_inner();
     new_task_data.username = &current_username;
 
@@ -54,7 +51,6 @@ fn create_task(new_task: Json<models::NewTask>, cookies: &CookieJar<'_>) -> Resu
         .execute(&mut connection)
         .expect("Error inserting new task");
 
-    // 挿入直後のタスクを取得
     let inserted_task = tasks
         .filter(username.eq(&current_username))
         .order(id.desc())
@@ -74,7 +70,6 @@ fn update_task(task_id: i32, task_update: Json<models::NewTask>, cookies: &Cooki
     use crate::schema::tasks::dsl::*;
     let mut connection = establish_connection();
 
-    // まずユーザーが所有するタスクかチェック
     let task_count: i64 = tasks
         .filter(id.eq(task_id))
         .filter(username.eq(&current_username))
@@ -86,7 +81,6 @@ fn update_task(task_id: i32, task_update: Json<models::NewTask>, cookies: &Cooki
         return Err(Status::Forbidden);
     }
     
-    // ユーザー名をセット
     let mut task_data = task_update.into_inner();
     task_data.username = &current_username;
 
@@ -111,7 +105,6 @@ fn delete_task(task_id: i32, cookies: &CookieJar<'_>) -> Result<&'static str, St
     use crate::schema::tasks::dsl::*;
     let mut connection = establish_connection();
 
-    // 所有権をチェック
     let task_count: i64 = tasks
         .filter(id.eq(task_id))
         .filter(username.eq(&current_username))
@@ -135,7 +128,6 @@ fn register(user: Json<models::NewUser>) -> &'static str {
     use crate::schema::users::dsl::*;
     let mut connection = establish_connection();
 
-    // パスワードをハッシュ化
     let hashed_pw = hash::<&str>(user.password, DEFAULT_COST).expect("Failed to hash password");
     let new_user = models::NewUser {
         username: &user.username,
@@ -154,10 +146,8 @@ fn login(login_data: Json<models::LoginData>, cookies: &CookieJar<'_>) -> &'stat
     let mut connection = establish_connection();
     let login = login_data.into_inner();
 
-    // データベース上のユーザー取得
     let result = users.find(&login.username).first::<models::User>(&mut connection);
     if let Ok(user_record) = result {
-        // パスワードハッシュ検証
         if verify(&login.password, &user_record.password).unwrap_or(false) {
             cookies.add(Cookie::new("username", login.username));
             return "Login successful";
