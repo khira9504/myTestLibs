@@ -10,12 +10,11 @@ export default defineConfig({
     outDir: resolve(__dirname, 'dist'),
     rollupOptions: {
       input: {
-        popup: join(__dirname, 'src/popup/index.html'),
-        background: join(__dirname, 'src/background/index.tsx'),
         content: join(__dirname, 'src/content/index.tsx')
       },
       output: {
-        entryFileNames: 'assets/[name].js'
+        entryFileNames: 'assets/[name].js',
+        inlineDynamicImports: true
       },
     }
   },
