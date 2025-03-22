@@ -30,6 +30,7 @@ class TCPServer:
 
       # クライアントから送られてきたデータをファイルに保存
       # withはファイル操作に必要な処理を簡潔に記載できる
+      # wbはバイナリファイルへの書き込み
       with open("serve_recv.txt", "wb") as f:
         f.write(request)
 
