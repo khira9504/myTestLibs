@@ -12,3 +12,7 @@ WEBサーバーの例：nginx・Apache・unicorn
 
 Webアプリケーション＝Webサーバー＋Webサーバー以外の共通機能のライブラリ＋サービスごとに固有のプログラム
 Webサーバー以外の共通機能のライブラリ＝Laravel・Django・Ruby on Rails・Spring
+
+# Apacheの使用
+## 起動
+`` sudo apachectl start ``
