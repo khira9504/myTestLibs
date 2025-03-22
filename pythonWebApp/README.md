@@ -23,3 +23,6 @@ Webサーバー以外の共通機能のライブラリ＝Laravel・Django・Ruby
 - grep：ファイルの中の特定の文字列（パターン）がある行を抽出するコマンド
 ## 終了
 `` sudo apachectl stop ``
+
+# TCPサーバー
+TCPサーバーから特定の機能を実装→Webサーバー
