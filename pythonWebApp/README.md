@@ -25,4 +25,4 @@ Webサーバー以外の共通機能のライブラリ＝Laravel・Django・Ruby
 `` sudo apachectl stop ``
 
 # TCPサーバー
-TCPサーバーから特定の機能を実装→Webサーバー
+TCP通信を行うサーバーから特定の機能を実装→Webサーバー
