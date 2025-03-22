@@ -26,3 +26,6 @@ Webサーバー以外の共通機能のライブラリ＝Laravel・Django・Ruby
 
 # TCPサーバー
 TCP通信を行うサーバーから特定の機能を実装→Webサーバー
+
+
+https://zenn.dev/bigen1925/books/introduction-to-web-application-with-python
