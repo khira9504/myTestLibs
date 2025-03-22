@@ -8,3 +8,7 @@ WEB技術を基盤としたアプリケーションソフトウェアのこと
 
 # サーバーとは？
 WEBサービスを提供するためのプログラムのこと
+WEBサーバーの例：nginx・Apache・unicorn
+
+Webアプリケーション＝Webサーバー＋Webサーバー以外の共通機能のライブラリ＋サービスごとに固有のプログラム
+Webサーバー以外の共通機能のライブラリ＝Laravel・Django・Ruby on Rails・Spring
