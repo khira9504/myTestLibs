@@ -1,3 +1,5 @@
+import streamlit as st
+
 def init_session() -> StreamlitSessionManager:
   mockdir = Path(TemporaryDirectory().name)
   mockdir.mkdir(exist_ok=True)
