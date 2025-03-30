@@ -7,6 +7,7 @@ from yaoya.const import UserRole
 from yaoya.models.base import BaseDataModel
 
 # dataclassデコレーターを使用するとデータを格納するために使用するもの
+# frozen=Trueでイミュータブルなデータクラスを作成する
 @dataclass(frozen=True)
 class User(BaseDataModel):
   # コンストラクター
