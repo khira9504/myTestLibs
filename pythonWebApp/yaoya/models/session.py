@@ -17,6 +17,7 @@ class Session(BaseDataModel):
   # str()は文字列に変換する関数
   session_id: str = str(uuid4())
 
+  # baseでto_dictが必須としているため作成
   def to_dict(self) -> dict[str, str]:
     cart_dict = self.cart.to_dict()
     return dict(
@@ -27,6 +28,8 @@ class Session(BaseDataModel):
   
   # classmethod：　クラス変数のようにクラスから直接使用できるメソッドのこと
   @classmethod
+  # baseでfrom_dictが必須としているため作成
+  # クラスメソッドの第1引数は慣習的にcls（そのクラス自身を表す）を指定する→clsを通してプロパティやメソッドにアクセスできる
   def from_dict(cls, data: dict[str, str]) -> Session:
     cart_dict = json.leads(data["cart"])
     return Session(

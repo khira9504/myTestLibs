@@ -12,6 +12,7 @@ class Item:
   price: int
   producing_area: str
 
+  # baseでto_dictが必須としているため作成
   def to_dict(self) -> dict[str, str]:
     return dict(
       item_id = self.item_id,
@@ -22,6 +23,8 @@ class Item:
   
   # classmethod：　クラス変数のようにクラスから直接使用できるメソッドのこと
   @classmethod
+  # baseでfrom_dictが必須としているため作成
+  # クラスメソッドの第1引数は慣習的にcls（そのクラス自身を表す）を指定する→clsを通してプロパティやメソッドにアクセスできる
   def from_dict(cls, data: dict[str, str]) -> Item:
     return Item(
       item_id = data["item_id"],

@@ -22,6 +22,7 @@ class BaseDataModel(Protocol):
     # 引数: 文字列をキーと値に持つ辞書
     # 戻り値: BaseDataModelのインスタンス
     @classmethod
+    # クラスメソッドの第1引数は慣習的にcls（そのクラス自身を表す）を指定する→clsを通してプロパティやメソッドにアクセスできる
     def from_dict(cls, data: dict[str, str]) -> BaseDataModel:
       # pass: コードとして何も実装したくない時に使用する
       pass 

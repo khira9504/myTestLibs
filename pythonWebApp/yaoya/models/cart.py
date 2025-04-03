@@ -13,6 +13,7 @@ class CartItem(BaseDataModel):
   item: Item
   quantity: int = 0
 
+  # baseでto_dictが必須としているため作成
   def to_dict(self) -> dict[str, str]:
     item_dict = self.item.to_dict()
     return dict(
@@ -22,6 +23,8 @@ class CartItem(BaseDataModel):
   
   # classmethod：　クラス変数のようにクラスから直接使用できるメソッドのこと
   @classmethod
+  # baseでfrom_dictが必須としているため作成
+  # クラスメソッドの第1引数は慣習的にcls（そのクラス自身を表す）を指定する→clsを通してプロパティやメソッドにアクセスできる
   def from_dict(cls, data: dict[str, str]) -> CartItem:
     item_data = json.loads(data["item"])
     return CartItem(

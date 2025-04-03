@@ -1,6 +1,7 @@
 # futureはpythonの標準モジュールで型指定を簡単に反映できるもの
 # list,tuple,dictなどは__future__で代替できる
 from __future__ import annotations
+# dataclasses: Pythonのモジュールでデータクラスの作成に関連する機能を提供する
 from dataclasses import dataclass
 from datetime import date, datetime
 from yaoya.const import UserRole
@@ -17,6 +18,7 @@ class User(BaseDataModel):
   email: str
   role: UserRole
 
+  # baseでto_dictが必須としているため作成
   def to_dict(self) -> dict[str, str]:
     return dict(
       user_id = self.user_id,
@@ -28,6 +30,8 @@ class User(BaseDataModel):
   
   # classmethod：　クラス変数のようにクラスから直接使用できるメソッドのこと
   @classmethod
+  # baseでfrom_dictが必須としているため作成
+  # クラスメソッドの第1引数は慣習的にcls（そのクラス自身を表す）を指定する→clsを通してプロパティやメソッドにアクセスできる
   def from_dict(cls, data: dict[str, str]) -> User:
     birthday = datetime.fromisoformat(data["birthday"])
     return User(
