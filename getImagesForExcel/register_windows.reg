@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\*\shell\ExtractExcelImages]
+@="画像を取得する"
+"Icon"="%SystemRoot%\\System32\\shell32.dll,70"
+
+[HKEY_CLASSES_ROOT\*\shell\ExtractExcelImages\command]
+@="\"%ProgramFiles%\\ExcelImageExtractor\\extract_images.exe\" \"%1\"" 
