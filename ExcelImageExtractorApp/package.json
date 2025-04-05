@@ -1,0 +1,29 @@
+{
+  "name": "excel-image-extractor",
+  "version": "1.0.0",
+  "description": "Excelファイルから画像を抽出するアプリケーション",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.excelimageextractor.app",
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*"
+    ]
+  }
+} 

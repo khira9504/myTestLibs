@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Excel画像抽出ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drop-zone:hover {
+            border-color: #666;
+            background-color: #f9f9f9;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel画像抽出ツール</h1>
+        <div class="drop-zone" id="dropZone">
+            <p>Excelファイルをここにドラッグ＆ドロップしてください</p>
+        </div>
+        <div id="status" class="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const dropZone = document.getElementById('dropZone');
+        const status = document.getElementById('status');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#666';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#ccc';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#ccc';
+
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.xlsx')) {
+                ipcRenderer.send('process-excel', file.path);
+                status.style.display = 'block';
+                status.textContent = '処理中...';
+                status.className = 'status';
+            } else {
+                status.style.display = 'block';
+                status.textContent = 'Excelファイル（.xlsx）のみ対応しています';
+                status.className = 'status error';
+            }
+        });
+
+        ipcRenderer.on('process-complete', (event, outputDir) => {
+            status.style.display = 'block';
+            status.textContent = `画像の抽出が完了しました。保存先: ${outputDir}`;
+            status.className = 'status success';
+        });
+
+        ipcRenderer.on('process-error', (event, error) => {
+            status.style.display = 'block';
+            status.textContent = `エラーが発生しました: ${error}`;
+            status.className = 'status error';
+        });
+    </script>
+</body>
+</html> 
