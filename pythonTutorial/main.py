@@ -13,6 +13,6 @@ print(word[0:2])
 # Py
 
 # 文字列の長さを測る
-s = 'supercalifragilisticexpialidocious'
+s = 'supercalifragilisticexpialidocioussss'
 print(len(s))
-# 34
+# 37
