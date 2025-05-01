@@ -7,14 +7,14 @@
   <script>
     async function mainData() {
         try {
-          const response = await fetch('https://senseiengineer.com/wp-json/wp/v2/topic?_embed&order=asc');
+          const response = await fetch('https://senseiengineer.com/wp-json/wp/v2/topic?_embed&order=desc');
           const json = await response.json();
           let html = '';
           let i = 1;
           for (const row of json) {
             const id = row.id;
             const title = row.title.rendered;
-            const date = new Date(row.modified).toISOString().split('T')[0].replace(/-/g, '.');
+            const date = row.date.substring(0, row.date.indexOf("T")).replace(/-/g, '.');
             html += `
               <li id="${id}" class="topicList">
                 ・<a href="./topic.html#${id}" class="topicList_link">${date}　${title}</a>
