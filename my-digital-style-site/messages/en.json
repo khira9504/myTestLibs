@@ -1,0 +1,11 @@
+{
+  "nav": {
+    "home": "Home",
+    "posts": "Posts",
+    "about": "About",
+    "language": "日本語"
+  },
+  "hero": {
+    "welcome": "Welcome to my Digital-style personal site!"
+  }
+}
