@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>topic | myTopicSite</title>
+  <script>
+    async function mainData() {
+        try {
+          const response = await fetch('https://senseiengineer.com/wp-json/wp/v2/topic?_embed&order=desc');
+          const json = await response.json();
+          let html = '';
+          let i = 1;
+          for (const row of json) {
+            const id = row.id;
+            const title = row.title.rendered;
+            const date = row.date.substring(0, row.date.indexOf("T")).replace(/-/g, '.');
+            const content = row.content.rendered;
+            const campareId = location.hash.replace("#", "");
+            if(id == campareId) {
+              html += `
+                <li id="${id}" class="topicList">
+                  <p class="topicList_title">${date}　${title}</p>
+                  <p class="topicList_text">${content}</p>
+                </li>
+              `;
+            }
+            i++;
+          };
+          document.querySelector('.topicLists').innerHTML = html;
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+      mainData();
+  </script>
+  <style>
+    p {
+      margin: 0;
+      padding: 0;
+    }
+    ul {
+      padding: 0;
+      margin: 20px auto;
+      width: 94%;
+    }
+    li {
+      margin: 0 0 14px;
+    }
+    h2 {
+      border-bottom: 1px solid #000;
+      font-size: 16px;
+      font-weight: normal;
+      padding: 0 0 4px;
+      margin: 0 0 2px;
+    }
+    .topicList {
+      list-style: none;
+      word-break: break-all;
+    }
+    .topicList_title {
+      margin: 0 0 20px;
+    }
+  </style>
+</head>
+<body>
+  <ul class="topicLists"></ul>
+</body>
+</html>
