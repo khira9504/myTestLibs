@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Task } from './types';
 import { TaskForm } from './components/TaskForm';
 import { GanttChart } from './components/GanttChart';
 
 const STORAGE_KEY = 'gantt-tasks';
 
-const App: React.FC = () => {
+export default function App() {
   const [tasks, setTasks] = useState<Task[]>(() => {
     const savedTasks = localStorage.getItem(STORAGE_KEY);
     if (savedTasks) {
@@ -50,5 +50,3 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-export default App; 
