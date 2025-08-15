@@ -1,0 +1,30 @@
+{
+  "name": "test-codex-cli",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Node.js + Playwright test scaffold",
+  "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "setup": "npm ci && npx playwright install --with-deps",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "lint": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs",
+    "format": "prettier --write .",
+    "type-check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.46.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.5.0",
+    "eslint": "^9.7.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^3.3.3"
+  }
+}
+
