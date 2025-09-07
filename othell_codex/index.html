@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>オセロ</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>オセロ</h1>
+      <div class="controls">
+        <button id="newGameBtn" class="btn primary">新規ゲーム</button>
+        <button id="passBtn" class="btn" title="打てる場所が無いときのみ有効" disabled>パス</button>
+        <label class="select">
+          <span>対戦相手:</span>
+          <select id="opponentSelect">
+            <option value="human">人間</option>
+            <option value="cpu">CPU（弱い）</option>
+          </select>
+        </label>
+        <label class="select">
+          <span>あなたの色:</span>
+          <select id="playerColorSelect">
+            <option value="black">黒</option>
+            <option value="white">白</option>
+          </select>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="hintsToggle" checked />
+          <span>合法手を表示</span>
+        </label>
+      </div>
+      <div class="status">
+        <div id="turnLabel">手番: 黒</div>
+        <div id="scoreLabel">黒: 2 石　|　白: 2 石</div>
+      </div>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </header>
+
+    <main>
+      <div id="board" class="board" aria-label="オセロ盤" role="grid" aria-rowcount="8" aria-colcount="8"></div>
+    </main>
+
+    <footer class="app-footer">
+      <small>シンプルなブラウザ版オセロ。操作: マスをクリック。</small>
+    </footer>
+
+    <!-- 勝利演出オーバーレイ -->
+    <div id="victoryOverlay" class="overlay" aria-hidden="true">
+      <div class="overlay-content">
+        <div id="winnerIcon" class="winner-icon"></div>
+        <div id="victoryText" class="overlay-text"></div>
+      </div>
+    </div>
+
+    <script src="script.js" defer></script>
+  </body>
+  </html>
