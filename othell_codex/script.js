@@ -19,6 +19,7 @@
   const victoryOverlay = document.getElementById('victoryOverlay');
   const winnerIcon = document.getElementById('winnerIcon');
   const victoryText = document.getElementById('victoryText');
+  const playAgainBtn = document.getElementById('playAgainBtn');
   const turnLabel = document.getElementById('turnLabel');
   const scoreLabel = document.getElementById('scoreLabel');
   const messageEl = document.getElementById('message');
@@ -32,6 +33,7 @@
   let opponentType = 'human'; // 'human' | 'cpu'
   let humanColor = BLACK;      // BLACK or WHITE（CPU時のみ有効）
   let cpuThinking = false;
+  let cpuTimer = null; // CPU指し待ちのタイマーID
   let winnerColor = null; // BLACK | WHITE | 0(引き分け) | null
 
   const directions = [
@@ -262,6 +264,9 @@
   }
 
   function onNewGame() {
+    // CPU思考の保留があればキャンセル
+    if (cpuTimer) { clearTimeout(cpuTimer); cpuTimer = null; }
+    cpuThinking = false;
     board = createInitialBoard();
     currentPlayer = BLACK;
     gameOver = false;
@@ -315,6 +320,10 @@
       onNewGame();
     });
 
+    playAgainBtn.addEventListener('click', () => {
+      onNewGame();
+    });
+
     buildBoardUI();
     onNewGame();
   }
@@ -326,7 +335,7 @@
     const moves = getValidMoves(board, currentPlayer);
     if (moves.length === 0) return; // パスや終局はcheckGameProgress側で処理
     cpuThinking = true;
-    setTimeout(() => {
+    cpuTimer = setTimeout(() => {
       const move = chooseCpuMove(board, currentPlayer);
       if (move) {
         applyMove(board, move, currentPlayer);
@@ -336,6 +345,7 @@
         checkGameProgress();
       }
       cpuThinking = false;
+      cpuTimer = null;
     }, 420);
   }
 
