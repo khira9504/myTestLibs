@@ -78,6 +78,23 @@ h1 {
   font-size: 14px;
 }
 
+/* セレクトUI */
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.select select {
+  background: #0f172a;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
 .status {
   margin-top: 8px;
   display: flex;
@@ -145,6 +162,11 @@ main {
   background: radial-gradient(100% 100% at 30% 30%, #fff, #d8d8d8);
 }
 
+/* 勝利演出で使うパルス */
+.disc.celebrate {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
 .hint::after {
   content: "";
   position: absolute;
@@ -169,3 +191,78 @@ main {
   margin-bottom: 16px;
 }
 
+/* 勝利オーバーレイ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.02);
+  transition: opacity .35s ease, transform .35s ease;
+  z-index: 1000;
+}
+
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.overlay-content {
+  background: rgba(17, 24, 39, 0.8);
+  border: 2px solid rgba(255,255,255,0.2);
+  padding: 24px 28px;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  animation: pop .35s ease;
+}
+
+.overlay.black .overlay-content {
+  box-shadow: 0 0 24px rgba(0,0,0,0.6);
+}
+
+.overlay.white .overlay-content {
+  box-shadow: 0 0 24px rgba(255,255,255,0.35);
+}
+
+.winner-icon {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  margin: 0 auto 10px auto;
+  box-shadow: inset 0 -8px 12px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.35);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.winner-icon.black {
+  background: radial-gradient(100% 100% at 30% 30%, #2a2a2a, #000);
+}
+
+.winner-icon.white {
+  background: radial-gradient(100% 100% at 30% 30%, #fff, #d8d8d8);
+}
+
+.overlay-text {
+  font-size: 22px;
+}
+
+.overlay-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pop {
+  0% { transform: translateY(6px) scale(0.98); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}

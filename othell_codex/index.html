@@ -37,23 +37,22 @@
       </div>
       <div id="message" class="message" role="status" aria-live="polite"></div>
     </header>
-
     <main>
       <div id="board" class="board" aria-label="オセロ盤" role="grid" aria-rowcount="8" aria-colcount="8"></div>
     </main>
-
     <footer class="app-footer">
       <small>シンプルなブラウザ版オセロ。操作: マスをクリック。</small>
     </footer>
-
     <!-- 勝利演出オーバーレイ -->
     <div id="victoryOverlay" class="overlay" aria-hidden="true">
       <div class="overlay-content">
         <div id="winnerIcon" class="winner-icon"></div>
         <div id="victoryText" class="overlay-text"></div>
+        <div class="overlay-actions">
+          <button id="playAgainBtn" class="btn primary">リセット</button>
+        </div>
       </div>
     </div>
-
     <script src="script.js" defer></script>
   </body>
   </html>
