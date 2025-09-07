@@ -16,6 +16,8 @@
   const hintsToggle = document.getElementById('hintsToggle');
   const opponentSelect = document.getElementById('opponentSelect');
   const playerColorSelect = document.getElementById('playerColorSelect');
+  const difficultySelect = document.getElementById('difficultySelect');
+  const strengthMeter = document.getElementById('strengthMeter');
   const victoryOverlay = document.getElementById('victoryOverlay');
   const winnerIcon = document.getElementById('winnerIcon');
   const victoryText = document.getElementById('victoryText');
@@ -35,6 +37,7 @@
   let cpuThinking = false;
   let cpuTimer = null; // CPU指し待ちのタイマーID
   let winnerColor = null; // BLACK | WHITE | 0(引き分け) | null
+  let difficulty = 'weak'; // 'weak' | 'normal' | 'strong'
 
   const directions = [
     [-1, -1], [-1, 0], [-1, 1],
@@ -308,9 +311,25 @@
     playerColorSelect.value = humanColor === BLACK ? 'black' : 'white';
     playerColorSelect.disabled = opponentType !== 'cpu';
 
+    // 難易度の初期化（保存されていれば復元）
+    try {
+      const savedDiff = localStorage.getItem('othell_codex_diff');
+      if (savedDiff === 'weak' || savedDiff === 'normal' || savedDiff === 'strong') difficulty = savedDiff;
+    } catch {}
+    if (difficultySelect) {
+      difficultySelect.value = difficulty;
+      difficultySelect.disabled = opponentType !== 'cpu';
+    }
+    if (strengthMeter) {
+      strengthMeter.style.display = opponentType === 'cpu' ? 'inline-flex' : 'none';
+      updateStrengthMeter();
+    }
+
     opponentSelect.addEventListener('change', () => {
       opponentType = opponentSelect.value;
       playerColorSelect.disabled = opponentType !== 'cpu';
+      if (difficultySelect) difficultySelect.disabled = opponentType !== 'cpu';
+      if (strengthMeter) strengthMeter.style.display = opponentType === 'cpu' ? 'inline-flex' : 'none';
       try { localStorage.setItem('othell_codex_opp', opponentType); } catch {}
       onNewGame();
     });
@@ -324,6 +343,15 @@
       onNewGame();
     });
 
+    if (difficultySelect) {
+      difficultySelect.addEventListener('change', () => {
+        difficulty = difficultySelect.value;
+        try { localStorage.setItem('othell_codex_diff', difficulty); } catch {}
+        updateStrengthMeter();
+        onNewGame();
+      });
+    }
+
     buildBoardUI();
     onNewGame();
   }
@@ -335,6 +363,7 @@
     const moves = getValidMoves(board, currentPlayer);
     if (moves.length === 0) return; // パスや終局はcheckGameProgress側で処理
     cpuThinking = true;
+    setMessage('CPU思考中…');
     cpuTimer = setTimeout(() => {
       const move = chooseCpuMove(board, currentPlayer);
       if (move) {
@@ -350,23 +379,148 @@
   }
 
   function chooseCpuMove(bd, player) {
+    if (difficulty === 'weak') return chooseWeakMove(bd, player);
+    if (difficulty === 'normal') return chooseNormalMove(bd, player);
+    return chooseStrongMove(bd, player);
+  }
+
+  function chooseWeakMove(bd, player) {
     const moves = getValidMoves(bd, player);
     if (moves.length === 0) return null;
     // 角を最優先
     const isCorner = (r, c) => (r === 0 || r === SIZE - 1) && (c === 0 || c === SIZE - 1);
     const cornerMoves = moves.filter(m => isCorner(m.r, m.c));
-    if (cornerMoves.length) {
-      return cornerMoves[Math.floor(Math.random() * cornerMoves.length)];
-    }
+    if (cornerMoves.length) return cornerMoves[Math.floor(Math.random() * cornerMoves.length)];
     // それ以外は最大反転枚数（同数ならランダム）
-    let best = [];
-    let bestScore = -Infinity;
+    let best = [], bestScore = -Infinity;
     for (const m of moves) {
       const score = m.flips.length;
       if (score > bestScore) { bestScore = score; best = [m]; }
       else if (score === bestScore) { best.push(m); }
     }
     return best[Math.floor(Math.random() * best.length)];
+  }
+
+  const POS_WEIGHTS = [
+    [120, -20, 20, 5, 5, 20, -20, 120],
+    [-20, -40, -5, -5, -5, -5, -40, -20],
+    [ 20,  -5, 15, 3, 3, 15,  -5,  20],
+    [  5,  -5,  3, 3, 3,  3,  -5,   5],
+    [  5,  -5,  3, 3, 3,  3,  -5,   5],
+    [ 20,  -5, 15, 3, 3, 15,  -5,  20],
+    [-20, -40, -5, -5, -5, -5, -40, -20],
+    [120, -20, 20, 5, 5, 20, -20, 120],
+  ];
+
+  function evaluateRelativeTo(bd, me) {
+    // 位置スコア + 機動力 + 石差 + 角
+    let pos = 0;
+    let disc = 0;
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const v = bd[r][c];
+        if (!v) continue;
+        pos += v * POS_WEIGHTS[r][c];
+        disc += v;
+      }
+    }
+    const posMe = pos * me;      // 自分視点の位置差
+    const discMe = disc * me;    // 自分視点の石差
+    const mobMe = getValidMoves(bd, me).length;
+    const mobOpp = getValidMoves(bd, -me).length;
+    const mobility = mobMe - mobOpp;
+    // 角ボーナス
+    let corners = 0;
+    const cs = [[0,0],[0,7],[7,0],[7,7]];
+    for (const [r,c] of cs) {
+      corners += (bd[r][c] === me ? 1 : (bd[r][c] === -me ? -1 : 0));
+    }
+    return posMe + 3 * mobility + 0.5 * discMe + 25 * corners;
+  }
+
+  function cloneBoard(bd) {
+    return bd.map(row => row.slice());
+  }
+
+  function chooseNormalMove(bd, player) {
+    const moves = getValidMoves(bd, player);
+    if (moves.length === 0) return null;
+    let bestMoves = [], bestScore = -Infinity;
+    for (const m of moves) {
+      const nb = cloneBoard(bd);
+      applyMove(nb, m, player);
+      const score = evaluateRelativeTo(nb, player);
+      if (score > bestScore) { bestScore = score; bestMoves = [m]; }
+      else if (score === bestScore) { bestMoves.push(m); }
+    }
+    return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+  }
+
+  function sortMovesHeuristic(bd, player, moves) {
+    // 評価の高い順に並べる（枝刈り効率UP）
+    return moves
+      .map(m => {
+        const nb = cloneBoard(bd);
+        applyMove(nb, m, player);
+        return { m, s: evaluateRelativeTo(nb, player) };
+      })
+      .sort((a,b) => b.s - a.s)
+      .map(x => x.m);
+  }
+
+  function negamax(bd, player, depth, alpha, beta, me) {
+    const moves = getValidMoves(bd, player);
+    if (depth === 0) {
+      return evaluateRelativeTo(bd, me);
+    }
+    if (moves.length === 0) {
+      // パス or 終局
+      const oppMoves = getValidMoves(bd, -player);
+      if (oppMoves.length === 0) {
+        // 終局: 石差を強調
+        let disc = 0;
+        for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) disc += bd[r][c];
+        return (disc * me) * 1000; // 大きめの値で勝敗を決定付ける
+      }
+      return -negamax(bd, -player, depth, -beta, -alpha, me);
+    }
+    let value = -Infinity;
+    const ordered = sortMovesHeuristic(bd, player, moves);
+    for (const m of ordered) {
+      const nb = cloneBoard(bd);
+      applyMove(nb, m, player);
+      const score = -negamax(nb, -player, depth - 1, -beta, -alpha, me);
+      if (score > value) value = score;
+      if (value > alpha) alpha = value;
+      if (alpha >= beta) break; // 枝刈り
+    }
+    return value;
+  }
+
+  function chooseStrongMove(bd, player) {
+    const moves = getValidMoves(bd, player);
+    if (moves.length === 0) return null;
+    const depth = moves.length <= 10 ? 3 : 2; // 分岐が多い時は浅く
+    let best = null, bestVal = -Infinity;
+    const ordered = sortMovesHeuristic(bd, player, moves);
+    for (const m of ordered) {
+      const nb = cloneBoard(bd);
+      applyMove(nb, m, player);
+      const val = -negamax(nb, -player, depth - 1, -Infinity, Infinity, player);
+      if (val > bestVal) { bestVal = val; best = m; }
+    }
+    return best || ordered[0];
+  }
+
+  function updateStrengthMeter() {
+    if (!strengthMeter) return;
+    const level = difficulty === 'weak' ? 1 : (difficulty === 'normal' ? 2 : 3);
+    const dots = strengthMeter.querySelectorAll('.dot');
+    dots.forEach((d, i) => {
+      d.classList.toggle('filled', i < level);
+    });
+    const label = difficulty === 'weak' ? '弱い' : (difficulty === 'normal' ? '普通' : '強い');
+    strengthMeter.setAttribute('aria-label', `CPUの強さ: ${label}`);
   }
 
   function showVictory(resultText) {

@@ -16,7 +16,7 @@
           <span>対戦相手:</span>
           <select id="opponentSelect">
             <option value="human">人間</option>
-            <option value="cpu">CPU（弱い）</option>
+            <option value="cpu">CPU</option>
           </select>
         </label>
         <label class="select">
@@ -25,6 +25,19 @@
             <option value="black">黒</option>
             <option value="white">白</option>
           </select>
+        </label>
+        <label class="select">
+          <span>強さ:</span>
+          <select id="difficultySelect">
+            <option value="weak">弱い</option>
+            <option value="normal">普通</option>
+            <option value="strong">強い</option>
+          </select>
+          <span id="strengthMeter" class="meter" aria-label="CPUの強さの可視化" role="img">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="dot" aria-hidden="true"></span>
+            <span class="dot" aria-hidden="true"></span>
+          </span>
         </label>
         <label class="toggle">
           <input type="checkbox" id="hintsToggle" checked />
