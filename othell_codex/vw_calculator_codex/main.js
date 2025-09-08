@@ -1,7 +1,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  const DECIMALS = 4; // 固定
+  const MAX_DECIMALS = 6; // 表示は最大6桁（7桁目を四捨五入）
 
   const els = {
     baseWidth: $("baseWidth"),
@@ -18,10 +18,21 @@
     return Number.isFinite(v) && v > 0 ? v : NaN;
   };
 
-  const roundTo = (value, decimals = DECIMALS) => {
+  const roundTo6 = (value) => {
     if (!Number.isFinite(value)) return NaN;
-    const m = Math.pow(10, decimals);
+    const m = 1e6;
     return Math.round(value * m) / m;
+  };
+
+  const formatNum = (value) => {
+    const r = roundTo6(value);
+    if (!Number.isFinite(r)) return "";
+    // toFixed(6) で丸め、末尾の0や小数点を削除
+    let s = r.toFixed(MAX_DECIMALS);
+    s = s.replace(/\.0+$/, ""); // 小数が .0 のみの場合の早期処理
+    if (s.includes('.')) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    if (s === "-0") s = "0";
+    return s;
   };
 
   const enableCopyIf = (btn, ok) => { btn.disabled = !ok; };
@@ -31,8 +42,8 @@
     const re = /(-?\d*\.?\d+)\s*px\b/gi;
     return text.replace(re, (_, num) => {
       const px = parseFloat(num);
-      const vw = roundTo((px / base) * 100, DECIMALS);
-      return `${vw.toFixed(DECIMALS)}vw`;
+      const vw = (px / base) * 100;
+      return `${formatNum(vw)}vw`;
     });
   };
 
@@ -41,8 +52,8 @@
     const re = /(-?\d*\.?\d+)\s*vw\b/gi;
     return text.replace(re, (_, num) => {
       const vw = parseFloat(num);
-      const px = roundTo((vw / 100) * base, DECIMALS);
-      return `${px.toFixed(DECIMALS)}px`;
+      const px = (vw / 100) * base;
+      return `${formatNum(px)}px`;
     });
   };
 
