@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>px ↔ vw 変換ツール | vw_calculator_codex</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>px ↔ vw 変換ツール</h1>
+        <p class="sub">デザイン幅を基準に px と vw を相互変換</p>
+      </header>
+
+      <section class="controls card">
+        <div class="field">
+          <label for="baseWidth">デザイン幅 (px)</label>
+          <input id="baseWidth" type="number" min="1" step="1" value="375" inputmode="numeric" />
+          <small class="hint">小数点以下の桁数: 4（固定） / 丸め: 四捨五入（固定）</small>
+        </div>
+      </section>
+
+      <section class="grids">
+        <div class="card">
+          <h2>px → vw</h2>
+          <p class="hint">式: <code>(px ÷ デザイン幅) × 100 = vw</code></p>
+          <div class="field">
+            <label for="cssPxInput">入力CSS（px を含む）</label>
+            <textarea id="cssPxInput" placeholder="例:
+.box {\n  width: 16px;\n  padding: 8px 12px;\n}\n@media (min-width: 768px) {\n  .box { margin-left: 24px; }\n}"></textarea>
+          </div>
+          <div class="field">
+            <label for="cssVwOutput">変換結果</label>
+            <textarea id="cssVwOutput" readonly placeholder="ここに変換結果が表示されます"></textarea>
+          </div>
+          <div class="result">
+            <button id="copyCssVw" class="copy" type="button" disabled>結果をコピー</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>vw → px</h2>
+          <p class="hint">式: <code>(vw ÷ 100) × デザイン幅 = px</code></p>
+          <div class="field">
+            <label for="cssVwInput">入力CSS（vw を含む）</label>
+            <textarea id="cssVwInput" placeholder="例:
+.title {\n  font-size: 4.2667vw;\n}\n.container {\n  gap: 2.4vw;\n}"></textarea>
+          </div>
+          <div class="field">
+            <label for="cssPxOutput">変換結果</label>
+            <textarea id="cssPxOutput" readonly placeholder="ここに変換結果が表示されます"></textarea>
+          </div>
+          <div class="result">
+            <button id="copyCssPx" class="copy" type="button" disabled>結果をコピー</button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>
+          参考: <a href="https://cruw.co.jp/px-vw/" target="_blank" rel="noopener">px ⇄ vw 換算ツール</a>（本ツールは機能を参考に独自実装）
+        </p>
+      </footer>
+    </main>
+
+    <script src="./main.js"></script>
+  </body>
+  </html>

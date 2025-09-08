@@ -1,0 +1,98 @@
+:root {
+  --bg: #0f1117;
+  --card: #151a23;
+  --text: #e6edf3;
+  --muted: #a4adba;
+  --border: #263041;
+  --accent: #3b82f6;
+  --accent-2: #2563eb;
+  --danger: #ef4444;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header h1 { margin: 0; font-size: 1.5rem; }
+.header .sub { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.controls {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.grids {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 820px) {
+  .grids { grid-template-columns: 1fr 1fr; }
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { color: var(--muted); font-size: .9rem; }
+.field input,
+.field select {
+  height: 40px;
+  background: #0b0f14;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(59 130 246 / 20%); }
+
+.result {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.result output {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.copy {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.copy:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.copy:disabled { cursor: not-allowed; opacity: .6; background: transparent; color: var(--muted); border-color: var(--border); }
+
+.hint { color: var(--muted); margin: 10px 0 6px; font-size: .85rem; }
+.snippet { background: #0b0f14; border: 1px solid var(--border); padding: 10px; border-radius: 8px; overflow: auto; }
+.snippet code, .snippet span { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.footer { color: var(--muted); text-align: center; font-size: .9rem; }
+
