@@ -1,29 +1,16 @@
 (() => {
   const $ = (id) => document.getElementById(id);
 
+  const DECIMALS = 4; // 固定
+
   const els = {
     baseWidth: $("baseWidth"),
-    decimals: $("decimals"),
-    roundMode: $("roundMode"),
-    pxInput: $("pxInput"),
-    vwInput: $("vwInput"),
-    vwResult: $("vwResult"),
-    pxResult: $("pxResult"),
-    vwSnippet: $("vwSnippet"),
-    pxSnippet: $("pxSnippet"),
-    copyVw: $("copyVw"),
-    copyPx: $("copyPx"),
-  };
-
-  const toHalfWidth = (str) => str.replace(/[！-～]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
-  const parseTextNumber = (value) => {
-    if (typeof value !== "string") return NaN;
-    const s = toHalfWidth(value).trim()
-      .replace(/[，,]/g, ".")
-      .replace(/[＾^]/g, "")
-      .replace(/[^0-9+\-\.eE]/g, "");
-    const n = parseFloat(s);
-    return Number.isFinite(n) ? n : NaN;
+    cssPxInput: $("cssPxInput"),
+    cssVwOutput: $("cssVwOutput"),
+    copyCssVw: $("copyCssVw"),
+    cssVwInput: $("cssVwInput"),
+    cssPxOutput: $("cssPxOutput"),
+    copyCssPx: $("copyCssPx"),
   };
 
   const getBaseWidth = () => {
@@ -31,88 +18,65 @@
     return Number.isFinite(v) && v > 0 ? v : NaN;
   };
 
-  const getDecimals = () => {
-    const d = parseInt(els.decimals.value, 10);
-    if (!Number.isFinite(d)) return 4;
-    return Math.min(10, Math.max(0, d));
-  };
-
-  const getRoundMode = () => (els.roundMode.value || "round");
-
-  const roundBy = (value, decimals, mode) => {
-    const m = Math.pow(10, decimals);
+  const roundTo = (value, decimals = DECIMALS) => {
     if (!Number.isFinite(value)) return NaN;
-    switch (mode) {
-      case "floor": return Math.floor(value * m) / m;
-      case "ceil": return Math.ceil(value * m) / m;
-      default: return Math.round(value * m) / m; // round
-    }
+    const m = Math.pow(10, decimals);
+    return Math.round(value * m) / m;
   };
 
-  const formatUnit = (n, unit) => Number.isFinite(n) ? `${n}${unit}` : "-";
   const enableCopyIf = (btn, ok) => { btn.disabled = !ok; };
 
-  const computeVw = (px, base) => (px / base) * 100;
-  const computePx = (vw, base) => (vw / 100) * base;
+  const convertCssPxToVw = (text, base) => {
+    if (!text) return "";
+    const re = /(-?\d*\.?\d+)\s*px\b/gi;
+    return text.replace(re, (_, num) => {
+      const px = parseFloat(num);
+      const vw = roundTo((px / base) * 100, DECIMALS);
+      return `${vw.toFixed(DECIMALS)}vw`;
+    });
+  };
 
-  const renderPxToVw = () => {
+  const convertCssVwToPx = (text, base) => {
+    if (!text) return "";
+    const re = /(-?\d*\.?\d+)\s*vw\b/gi;
+    return text.replace(re, (_, num) => {
+      const vw = parseFloat(num);
+      const px = roundTo((vw / 100) * base, DECIMALS);
+      return `${px.toFixed(DECIMALS)}px`;
+    });
+  };
+
+  const synthesizePxToVw = () => {
     const base = getBaseWidth();
-    const decimals = getDecimals();
-    const mode = getRoundMode();
-    const px = parseTextNumber(els.pxInput.value);
-
-    if (!Number.isFinite(base) || !Number.isFinite(px)) {
-      els.vwResult.textContent = "-";
-      els.vwSnippet.textContent = "-";
-      enableCopyIf(els.copyVw, false);
+    if (!Number.isFinite(base)) {
+      els.cssVwOutput.value = "";
+      enableCopyIf(els.copyCssVw, false);
       return;
     }
-
-    const vwRaw = computeVw(px, base);
-    const vw = roundBy(vwRaw, decimals, mode);
-    els.vwResult.textContent = formatUnit(vw, "vw");
-    els.vwSnippet.textContent = formatUnit(vw, "vw");
-    enableCopyIf(els.copyVw, Number.isFinite(vw));
+    const out = convertCssPxToVw(els.cssPxInput.value, base);
+    els.cssVwOutput.value = out;
+    enableCopyIf(els.copyCssVw, !!out);
   };
 
-  const renderVwToPx = () => {
+  const synthesizeVwToPx = () => {
     const base = getBaseWidth();
-    const decimals = getDecimals();
-    const mode = getRoundMode();
-    const vw = parseTextNumber(els.vwInput.value);
-
-    if (!Number.isFinite(base) || !Number.isFinite(vw)) {
-      els.pxResult.textContent = "-";
-      els.pxSnippet.textContent = "-";
-      enableCopyIf(els.copyPx, false);
+    if (!Number.isFinite(base)) {
+      els.cssPxOutput.value = "";
+      enableCopyIf(els.copyCssPx, false);
       return;
     }
-
-    const pxRaw = computePx(vw, base);
-    const px = roundBy(pxRaw, decimals, mode);
-    els.pxResult.textContent = formatUnit(px, "px");
-    els.pxSnippet.textContent = formatUnit(px, "px");
-    enableCopyIf(els.copyPx, Number.isFinite(px));
+    const out = convertCssVwToPx(els.cssVwInput.value, base);
+    els.cssPxOutput.value = out;
+    enableCopyIf(els.copyCssPx, !!out);
   };
 
-  const saveSettings = () => {
-    try {
-      localStorage.setItem("vwcalc.settings", JSON.stringify({
-        baseWidth: getBaseWidth(),
-        decimals: getDecimals(),
-        roundMode: getRoundMode(),
-      }));
-    } catch (_) {}
+  const saveBaseWidth = () => {
+    try { localStorage.setItem("vwcalc.baseWidth", String(getBaseWidth() || "")); } catch (_) {}
   };
-
-  const loadSettings = () => {
+  const loadBaseWidth = () => {
     try {
-      const raw = localStorage.getItem("vwcalc.settings");
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      if (Number.isFinite(s.baseWidth) && s.baseWidth > 0) els.baseWidth.value = String(s.baseWidth);
-      if (Number.isFinite(s.decimals)) els.decimals.value = String(Math.min(10, Math.max(0, s.decimals)));
-      if (typeof s.roundMode === "string") els.roundMode.value = s.roundMode;
+      const v = localStorage.getItem("vwcalc.baseWidth");
+      if (v) els.baseWidth.value = v;
     } catch (_) {}
   };
 
@@ -123,33 +87,20 @@
       btn.textContent = "コピー済み";
       btn.disabled = true;
       setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 900);
-    } catch (e) {
-      console.warn("clipboard error", e);
-    }
+    } catch (e) { console.warn("clipboard error", e); }
   };
 
   // Events
   ["input", "change"].forEach((evt) => {
-    els.baseWidth.addEventListener(evt, () => { saveSettings(); renderPxToVw(); renderVwToPx(); });
-    els.decimals.addEventListener(evt, () => { saveSettings(); renderPxToVw(); renderVwToPx(); });
-    els.roundMode.addEventListener(evt, () => { saveSettings(); renderPxToVw(); renderVwToPx(); });
+    els.baseWidth.addEventListener(evt, () => { saveBaseWidth(); synthesizePxToVw(); synthesizeVwToPx(); });
   });
-
-  els.pxInput.addEventListener("input", renderPxToVw);
-  els.vwInput.addEventListener("input", renderVwToPx);
-
-  els.copyVw.addEventListener("click", () => {
-    const t = els.vwResult.textContent || "";
-    if (t !== "-") copyText(t, els.copyVw);
-  });
-  els.copyPx.addEventListener("click", () => {
-    const t = els.pxResult.textContent || "";
-    if (t !== "-") copyText(t, els.copyPx);
-  });
+  els.cssPxInput.addEventListener("input", synthesizePxToVw);
+  els.cssVwInput.addEventListener("input", synthesizeVwToPx);
+  els.copyCssVw.addEventListener("click", () => { if (els.cssVwOutput.value) copyText(els.cssVwOutput.value, els.copyCssVw); });
+  els.copyCssPx.addEventListener("click", () => { if (els.cssPxOutput.value) copyText(els.cssPxOutput.value, els.copyCssPx); });
 
   // Init
-  loadSettings();
-  renderPxToVw();
-  renderVwToPx();
+  loadBaseWidth();
+  synthesizePxToVw();
+  synthesizeVwToPx();
 })();
-

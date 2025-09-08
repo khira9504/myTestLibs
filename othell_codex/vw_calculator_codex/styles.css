@@ -66,7 +66,22 @@ a:hover { text-decoration: underline; }
   padding: 8px 10px;
   outline: none;
 }
+.field textarea {
+  min-height: 220px;
+  background: #0b0f14;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
 .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(59 130 246 / 20%); }
+.field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(59 130 246 / 20%); }
+.field textarea[readonly] { opacity: .95; }
 
 .result {
   margin-top: 8px;
@@ -95,4 +110,3 @@ a:hover { text-decoration: underline; }
 .snippet code, .snippet span { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
 .footer { color: var(--muted); text-align: center; font-size: .9rem; }
-
