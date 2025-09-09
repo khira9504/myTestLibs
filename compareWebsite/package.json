@@ -1,0 +1,13 @@
+{
+  "name": "compare-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "2つのURLを並べて同期スクロールで比較するツール",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
+

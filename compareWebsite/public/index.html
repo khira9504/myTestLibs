@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web比較ビューア（同期スクロール）</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="group">
+        <button id="btn-pc" class="btn">PC 1920px</button>
+        <button id="btn-sp" class="btn">SP 375px</button>
+        <span class="sep"></span>
+        <label class="checkbox">
+          <input type="checkbox" id="sync-toggle" checked /> 同期スクロール
+        </label>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="inputs">
+        <div class="pane-input left">
+          <label for="left-url">左URL</label>
+          <input id="left-url" type="text" placeholder="https://example.com" />
+          <button id="left-load" class="btn">読み込み</button>
+        </div>
+        <div class="pane-input right">
+          <label for="right-url">右URL</label>
+          <input id="right-url" type="text" placeholder="https://example.org" />
+          <button id="right-load" class="btn">読み込み</button>
+        </div>
+      </section>
+
+      <section class="frames">
+        <div class="frame-wrapper" data-side="left">
+          <div class="frame-header">
+            <span>左</span>
+            <span class="size-label" id="left-size"></span>
+          </div>
+          <iframe id="left-frame" title="左ページ"></iframe>
+        </div>
+        <div class="frame-wrapper" data-side="right">
+          <div class="frame-header">
+            <span>右</span>
+            <span class="size-label" id="right-size"></span>
+          </div>
+          <iframe id="right-frame" title="右ページ"></iframe>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footnote">
+      <small>
+        注意: 多くのサイトは直接iframeでの表示を制限しています。本ツールはサーバ側プロキシでHTMLを取得し、相対パスを補正して表示します。
+        ページ内リンクの遷移はプロキシを経由しない場合があり、その際は同期スクロールが無効になることがあります。
+      </small>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
+
