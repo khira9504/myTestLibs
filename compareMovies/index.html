@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>動画比較ツール</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>動画比較ツール</h1>
+    </header>
+
+    <main class="container">
+      <section class="controls">
+        <div class="file-pickers">
+          <label class="file">
+            <span>動画1を選択</span>
+            <input id="file1" type="file" accept="video/*" />
+          </label>
+          <label class="file">
+            <span>動画2を選択</span>
+            <input id="file2" type="file" accept="video/*" />
+          </label>
+        </div>
+
+        <div class="buttons">
+          <button id="playBoth" class="primary" disabled>同時再生</button>
+          <button id="pauseBoth" class="secondary" disabled>一時停止</button>
+          <button id="resetBoth" class="secondary" disabled>リセット</button>
+          <button id="sideBySide" class="secondary" disabled>横並びで比較</button>
+          <button id="overlay" class="secondary" disabled>重ねて比較</button>
+          <button id="toggleTransparency" class="secondary" disabled>透過切替</button>
+        </div>
+
+        <div class="audio-controls">
+          <button id="toggleMute" class="secondary" disabled>音声オン</button>
+          <label class="vol">
+            <span>音量</span>
+            <input id="volume" type="range" min="0" max="100" value="100" disabled />
+            <div class="vol-steps">
+              <button id="volDown" class="tiny" disabled>-</button>
+              <button id="volUp" class="tiny" disabled>+</button>
+            </div>
+          </label>
+        </div>
+
+        <p class="hint">ヒント: デフォルトで消音。2本の動画を選択後、各ボタンが有効になります。重ね表示時は前面の動画が60%透過します（透過切替で前後を入れ替え）。</p>
+      </section>
+
+      <section class="viewer">
+        <div id="videos" class="videos side-by-side">
+          <video id="v1" preload="metadata" muted playsinline></video>
+          <video id="v2" preload="metadata" muted playsinline></video>
+        </div>
+        <div id="dropHint" class="drop-hint" aria-hidden="true">
+          <div class="drop-msg">
+            <strong>ドラッグ&ドロップ対応</strong>
+            <span>左 = 動画1 / 右 = 動画2</span>
+            <span>2ファイル同時ドロップで自動割当</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+  </html>

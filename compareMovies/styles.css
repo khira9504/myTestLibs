@@ -1,0 +1,129 @@
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #22c55e;
+  --accent-2: #3b82f6;
+  --border: #1f2937;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+}
+.app-header h1 { margin: 0; font-size: 18px; letter-spacing: 0.5px; }
+
+.container { padding: 16px; max-width: 1200px; margin: 0 auto; }
+
+.controls { display: grid; gap: 12px; margin-bottom: 12px; }
+.file-pickers { display: flex; gap: 10px; flex-wrap: wrap; }
+.file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px dashed var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.file input[type="file"] { color: var(--muted); }
+
+.buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+button.primary { border-color: transparent; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #0b1220; font-weight: 600; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hint { color: var(--muted); margin: 4px 0 0; font-size: 12px; }
+
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.audio-controls .vol { display: inline-flex; align-items: center; gap: 8px; }
+.audio-controls input[type="range"] { width: 200px; }
+.audio-controls .tiny { padding: 4px 8px; border-radius: 8px; }
+
+.viewer {
+  position: relative;
+  background: #0b1220;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.viewer.dragover { border-color: var(--accent-2); box-shadow: 0 0 0 2px rgba(59,130,246,0.25) inset; }
+
+.drop-hint {
+  position: absolute;
+  inset: 6px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text);
+  background: rgba(17,24,39,0.6);
+  border: 2px dashed var(--accent-2);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.viewer.dragover .drop-hint { display: flex; }
+.drop-hint .drop-msg { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.drop-hint strong { font-size: 16px; }
+
+.videos { width: 100%; }
+.videos.side-by-side {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  height: var(--maxH, 60vh);
+}
+.videos.side-by-side video {
+  width: 50%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #000;
+}
+
+/* Overlay mode ensures both videos stack and fit */
+.videos.overlay {
+  position: relative;
+  width: 100%;
+  height: var(--maxH, 60vh);
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.videos.overlay video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* overlay の前面/背面制御 */
+.videos.overlay video { z-index: 1; }
+.videos.overlay video.top { z-index: 2; }
