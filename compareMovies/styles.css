@@ -65,12 +65,30 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .audio-controls input[type="range"] { width: 200px; }
 .audio-controls .tiny { padding: 4px 8px; border-radius: 8px; }
 
+.timeline-controls {
+  justify-content: center;
+  text-align: center;
+}
+
+.timeline-controls, .overlay-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.timeline-controls .seek, .overlay-controls .alpha {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.timeline-controls input[type="range"] { width: 420px; max-width: calc(100vw - 220px); }
+.overlay-controls input[type="range"] { width: 200px; }
+
 .viewer {
   position: relative;
   background: #0b1220;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px;
+  margin: 0 0 10px;
 }
 
 .viewer.dragover { border-color: var(--accent-2); box-shadow: 0 0 0 2px rgba(59,130,246,0.25) inset; }
@@ -91,6 +109,19 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .viewer.dragover .drop-hint { display: flex; }
 .drop-hint .drop-msg { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .drop-hint strong { font-size: 16px; }
+
+.drop-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  pointer-events: none;
+}
 
 .videos { width: 100%; }
 .videos.side-by-side {
@@ -127,3 +158,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* overlay の前面/背面制御 */
 .videos.overlay video { z-index: 1; }
 .videos.overlay video.top { z-index: 2; }
+
+.audio-overlay-controls {
+  display: flex;
+}

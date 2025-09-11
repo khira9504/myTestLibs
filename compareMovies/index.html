@@ -30,22 +30,31 @@
           <button id="resetBoth" class="secondary" disabled>リセット</button>
           <button id="sideBySide" class="secondary" disabled>横並びで比較</button>
           <button id="overlay" class="secondary" disabled>重ねて比較</button>
-          <button id="toggleTransparency" class="secondary" disabled>透過切替</button>
+          <button id="toggleTransparency" class="secondary" style="display: none;" disabled>透過切替</button>
         </div>
 
-        <div class="audio-controls">
-          <button id="toggleMute" class="secondary" disabled>音声オン</button>
-          <label class="vol">
-            <span>音量</span>
-            <input id="volume" type="range" min="0" max="100" value="100" disabled />
-            <div class="vol-steps">
-              <button id="volDown" class="tiny" disabled>-</button>
-              <button id="volUp" class="tiny" disabled>+</button>
-            </div>
-          </label>
+        <div class="audio-overlay-controls">
+          <div class="audio-controls">
+            <button id="toggleMute" class="secondary" disabled>音声オン</button>
+            <label class="vol">
+              <span>音量</span>
+              <input id="volume" type="range" min="0" max="100" value="100" disabled />
+              <div class="vol-steps">
+                <button id="volDown" class="tiny" disabled>-</button>
+                <button id="volUp" class="tiny" disabled>+</button>
+              </div>
+            </label>
+          </div>
+  
+          <div class="overlay-controls">
+            <label class="alpha">
+              <span>透過率</span>
+              <input id="alpha" type="range" min="0" max="100" value="60" disabled />
+            </label>
+          </div>
         </div>
 
-        <p class="hint">ヒント: デフォルトで消音。2本の動画を選択後、各ボタンが有効になります。重ね表示時は前面の動画が60%透過します（透過切替で前後を入れ替え）。</p>
+        <!-- <p class="hint">ヒント: デフォルトで消音。2本の動画を選択後、各ボタンが有効になります。重ね表示時は前面の動画が60%透過します（透過切替で前後を入れ替え）。</p> -->
       </section>
 
       <section class="viewer">
@@ -60,7 +69,15 @@
             <span>2ファイル同時ドロップで自動割当</span>
           </div>
         </div>
+        <div class="drop-badge">ここにドラッグ&ドロップで読み込み可能</div>
       </section>
+
+      <div class="timeline-controls">
+        <label class="seek">
+          <span>再生位置</span>
+          <input id="seek" type="range" min="0" max="0" value="0" disabled />
+        </label>
+      </div>
     </main>
 
     <script src="script.js"></script>

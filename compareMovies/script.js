@@ -16,11 +16,14 @@
   const volumeSlider = document.getElementById('volume');
   const volDownBtn = document.getElementById('volDown');
   const volUpBtn = document.getElementById('volUp');
+  const seekSlider = document.getElementById('seek');
+  const alphaSlider = document.getElementById('alpha');
 
   let url1 = null;
   let url2 = null;
   let overlayTop = 'v2'; // overlay時に前面にくる動画（初期はv2）
   let dragCounter = 0; // dragenter/dragleave の入れ子制御
+  let isSeeking = false;
 
   function revoke(url) {
     if (url) URL.revokeObjectURL(url);
@@ -39,6 +42,8 @@
     volumeSlider.disabled = !ready;
     volDownBtn.disabled = !ready;
     volUpBtn.disabled = !ready;
+    seekSlider.disabled = !ready;
+    alphaSlider.disabled = !ready || !isOverlay;
   }
 
   function toSideBySide() {
@@ -86,18 +91,22 @@
     // オーディオ初期化
     v1.muted = true; v2.muted = true;
     setVolume(1);
+    // シーク初期化
+    try { seekSlider.value = '0'; } catch (_) {}
+    try { alphaSlider.value = '60'; } catch (_) {}
     // ボタン状態更新
     updateAudioUI();
     updateButtonsState();
   }
 
   function applyOverlayState() {
-    // 前面の動画を60%透過（= opacity 0.4）にする
-    const topIsV2 = overlayTop === 'v2';
+    // 透過率スライダーに基づき、前面の動画を透過
+    const transparency = Math.min(100, Math.max(0, Number(alphaSlider.value) || 60)) / 100;
+    const topOpacity = 1 - transparency; // 透過率60% => opacity 0.4
     v1.classList.toggle('top', overlayTop === 'v1');
     v2.classList.toggle('top', overlayTop === 'v2');
-    v1.style.opacity = overlayTop === 'v1' ? '0.4' : '1';
-    v2.style.opacity = overlayTop === 'v2' ? '0.4' : '1';
+    v1.style.opacity = overlayTop === 'v1' ? String(topOpacity) : '1';
+    v2.style.opacity = overlayTop === 'v2' ? String(topOpacity) : '1';
   }
 
   function toggleTransparency() {
@@ -109,7 +118,7 @@
   function updateMaxHeight() {
     const header = document.querySelector('.app-header');
     const controls = document.querySelector('.controls');
-    const extra = 40; // 余白調整
+    const extra = 100; // 余白調整
     const h = window.innerHeight - (header?.offsetHeight || 0) - (controls?.offsetHeight || 0) - extra;
     const maxH = Math.max(180, Math.round(h));
     document.documentElement.style.setProperty('--maxH', maxH + 'px');
@@ -131,6 +140,27 @@
   function stepVolume(delta) {
     const current = Number(volumeSlider.value) / 100;
     setVolume(current + delta);
+  }
+
+  // ===== シーク制御 =====
+  function dur(v) { return Number.isFinite(v?.duration) ? v.duration : 0; }
+  function cur(v) { return Number.isFinite(v?.currentTime) ? v.currentTime : 0; }
+  function masterDuration() { return Math.max(dur(v1), dur(v2)); }
+
+  function updateSeekUI() {
+    if (isSeeking) return; // ユーザー操作中はUI更新を止める
+    const max = masterDuration();
+    seekSlider.max = String(max || 0);
+    // 進捗は両者の平均（どちらか未読み込みなら読み込み済み側）
+    const has1 = dur(v1) > 0; const has2 = dur(v2) > 0;
+    const value = has1 && has2 ? (cur(v1) + cur(v2)) / 2 : (has1 ? cur(v1) : cur(v2));
+    seekSlider.value = String(Math.min(max || 0, value || 0));
+  }
+
+  function seekTo(t) {
+    const time = Math.max(0, Number(t) || 0);
+    try { v1.currentTime = Math.min(time, dur(v1) || time); } catch(_) {}
+    try { v2.currentTime = Math.min(time, dur(v2) || time); } catch(_) {}
   }
 
   // ===== Drag & Drop =====
@@ -222,6 +252,7 @@
     v1.volume = Number(volumeSlider.value) / 100;
     updateButtonsState();
     updateAudioUI();
+    v1.addEventListener('loadedmetadata', updateSeekUI, { once: true });
   });
 
   file2.addEventListener('change', () => {
@@ -236,6 +267,7 @@
     v2.volume = Number(volumeSlider.value) / 100;
     updateButtonsState();
     updateAudioUI();
+    v2.addEventListener('loadedmetadata', updateSeekUI, { once: true });
   });
 
   // ボタン
@@ -262,11 +294,24 @@
   volDownBtn.addEventListener('click', () => stepVolume(-0.1));
   volUpBtn.addEventListener('click', () => stepVolume(+0.1));
 
+  // シークバー操作
+  seekSlider.addEventListener('mousedown', () => { isSeeking = true; });
+  document.addEventListener('mouseup', () => { if (isSeeking) { isSeeking = false; } });
+  seekSlider.addEventListener('input', () => { isSeeking = true; seekTo(Number(seekSlider.value)); });
+  seekSlider.addEventListener('change', () => { isSeeking = false; seekTo(Number(seekSlider.value)); });
+
+  // 透過率スライダー
+  alphaSlider.addEventListener('input', () => { if (videosWrap.classList.contains('overlay')) applyOverlayState(); });
+
   // Drag & Drop イベント登録（viewer全体）
   viewerEl.addEventListener('dragenter', onDragEnter);
   viewerEl.addEventListener('dragover', onDragOver);
   viewerEl.addEventListener('dragleave', onDragLeave);
   viewerEl.addEventListener('drop', onDrop);
+
+  // 再生中の進捗反映
+  v1.addEventListener('timeupdate', updateSeekUI);
+  v2.addEventListener('timeupdate', updateSeekUI);
 
   // ページ離脱時にURL解放
   window.addEventListener('beforeunload', () => { revoke(url1); revoke(url2); });
@@ -276,4 +321,5 @@
   window.addEventListener('resize', updateMaxHeight);
   updateButtonsState();
   updateAudioUI();
+  updateSeekUI();
 })();
