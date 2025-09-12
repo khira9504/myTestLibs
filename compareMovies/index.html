@@ -14,7 +14,6 @@
     <main class="container">
       <section class="controls">
         <div class="file-pickers">
-          <button id="resetBoth" class="secondary" disabled>リセット</button>
           <label class="file">
             <span>動画1を選択</span>
             <input id="file1" type="file" accept="video/*" />
@@ -26,17 +25,7 @@
         </div>
 
         <div class="buttons">
-          <button id="sideBySide" class="secondary" disabled>横並びで比較</button>
-          <button id="overlay" class="secondary" disabled>重ねて比較</button>
           <button id="toggleTransparency" class="secondary" style="display: none;" disabled>透過切替</button>
-          <div class="audio-overlay-controls">
-            <div class="overlay-controls">
-              <label class="alpha">
-                <span>透過率</span>
-                <input id="alpha" type="range" min="0" max="100" value="60" disabled />
-              </label>
-            </div>
-          </div>
         </div>
 
         <!-- <p class="hint">ヒント: デフォルトで消音。2本の動画を選択後、各ボタンが有効になります。重ね表示時は前面の動画が60%透過します（透過切替で前後を入れ替え）。</p> -->
@@ -44,8 +33,8 @@
 
       <section class="viewer">
         <div id="videos" class="videos side-by-side">
-          <video id="v1" preload="metadata" muted playsinline></video>
-          <video id="v2" preload="metadata" muted playsinline></video>
+          <video id="v1" preload="metadata" playsinline></video>
+          <video id="v2" preload="metadata" playsinline></video>
         </div>
         <div id="dropHint" class="drop-hint" aria-hidden="true">
           <div class="drop-msg">
@@ -72,6 +61,31 @@
             </button>
             <span id="timeText" class="time">0:00 / 0:00</span>
           </div>
+          <div class="center">
+            <button id="sideBySide" class="icon-btn yt-btn" disabled title="横並びで比較" aria-label="横並びで比較">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <rect x="3" y="4" width="8" height="16" fill="currentColor"/>
+                <rect x="13" y="4" width="8" height="16" fill="currentColor"/>
+              </svg>
+            </button>
+            <button id="overlay" class="icon-btn yt-btn" disabled title="重ねて比較" aria-label="重ねて比較">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <rect x="5" y="7" width="12" height="12" fill="currentColor" opacity="0.6"/>
+                <rect x="7" y="5" width="12" height="12" fill="currentColor"/>
+              </svg>
+            </button>
+            <div class="alpha-wrap">
+              <button class="icon-btn yt-btn" title="透過率" aria-label="透過率" disabled id="alphaIcon">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <rect x="3" y="3" width="6" height="6" fill="currentColor" opacity="0.35"/>
+                  <rect x="9" y="3" width="6" height="6" fill="currentColor"/>
+                  <rect x="3" y="9" width="6" height="6" fill="currentColor"/>
+                  <rect x="9" y="9" width="6" height="6" fill="currentColor" opacity="0.35"/>
+                </svg>
+              </button>
+              <input id="alpha" class="yt-slider yt-alpha" type="range" min="0" max="100" value="60" disabled />
+            </div>
+          </div>
           <div class="right">
             <button id="toggleMute" class="icon-btn yt-btn" disabled title="音量オン/オフ" aria-label="音量オン/オフ">
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -81,6 +95,11 @@
               </svg>
             </button>
             <input id="volume" class="yt-slider yt-volume" type="range" min="0" max="100" value="100" disabled />
+            <button id="resetBoth" class="icon-btn yt-btn" disabled title="リセット" aria-label="リセット">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path fill="currentColor" d="M12 7V3L7 8l5 5V9a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>

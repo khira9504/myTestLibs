@@ -31,7 +31,7 @@ body {
 
 .container { padding: 16px; max-width: 1200px; margin: 0 auto; }
 
-.controls { display: grid; gap: 12px; margin-bottom: 12px; }
+.controls { display: grid; gap: 12px; }
 .file-pickers { display: flex; gap: 10px; flex-wrap: wrap; }
 .file {
   display: inline-flex;
@@ -42,8 +42,9 @@ body {
   color: var(--text);
   border-radius: 10px;
   padding: 10px 12px;
+  font-size: 12px;
 }
-.file input[type="file"] { color: var(--muted); }
+.file input[type="file"] { color: var(--muted); font-size: 12px; }
 
 .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 button {
@@ -123,7 +124,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .yt-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--yt-thumb); border: none; }
 
 /* タイムラインの幅 */
-.yt-timeline { width: 100%; max-width: 900px; }
+.yt-timeline { width: 100%; }
 /* ボリュームはYTっぽく短め */
 .yt-volume { width: 120px !important; }
 
@@ -200,9 +201,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* 動画領域下部のタイムライン（オーバーレイ） */
 .timeline-overlay {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 8px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 5;
   pointer-events: none; /* 子要素だけ操作可能にする */
 }
@@ -264,11 +265,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   gap: 10px;
 }
 .player-controls .control-bar .left,
-.player-controls .control-bar .right {
+.player-controls .control-bar .right,
+.player-controls .control-bar .center {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
+.player-controls .control-bar .center { justify-content: center; }
 .player-controls .time {
   color: var(--muted);
   font-feature-settings: "tnum";
@@ -284,3 +287,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .yt-btn:hover { background: rgba(255,255,255,0.08); }
 .yt-btn:disabled { opacity: 0.5; }
+.yt-btn.active { color: var(--yt-red); background: rgba(255,0,0,0.08); }
+
+/* 透過率スライダー（短め） */
+.yt-alpha { width: 120px; }
+.alpha-wrap { display: inline-flex; align-items: center; gap: 6px; }

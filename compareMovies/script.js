@@ -19,6 +19,7 @@
   const timeText = document.getElementById('timeText');
   const seekSlider = document.getElementById('seek');
   const alphaSlider = document.getElementById('alpha');
+  const alphaIcon = document.getElementById('alphaIcon');
 
   let url1 = null;
   let url2 = null;
@@ -37,7 +38,7 @@
     const isOverlay = videosWrap.classList.contains('overlay');
     playBothBtn.disabled = !ready;
     pauseBothBtn.disabled = !ready;
-    resetBothBtn.disabled = !ready;
+    resetBothBtn.disabled = !anyLoaded;
     sideBySideBtn.disabled = !ready;
     overlayBtn.disabled = !ready;
     toggleTransBtn.disabled = !ready || !isOverlay;
@@ -47,6 +48,13 @@
     if (volUpBtn) volUpBtn.disabled = !ready;
     seekSlider.disabled = !ready;
     alphaSlider.disabled = !ready || !isOverlay;
+    if (alphaIcon) alphaIcon.disabled = !ready || !isOverlay;
+
+    // ビュー切替のアクティブ表示
+    sideBySideBtn.classList.toggle('active', ready && !isOverlay);
+    overlayBtn.classList.toggle('active', ready && isOverlay);
+    sideBySideBtn.setAttribute('aria-pressed', String(ready && !isOverlay));
+    overlayBtn.setAttribute('aria-pressed', String(ready && isOverlay));
 
     // 再生/一時停止のトグル表示（未準備時は再生ボタンを表示）
     if (!ready) {
@@ -111,7 +119,7 @@
     toSideBySide();
     overlayTop = 'v2';
     // オーディオ初期化
-    v1.muted = true; v2.muted = true;
+    v1.muted = false; v2.muted = false;
     setVolume(1);
     // シーク初期化
     try { seekSlider.value = '0'; } catch (_) {}
@@ -124,7 +132,8 @@
 
   function applyOverlayState() {
     // 透過率スライダーに基づき、前面の動画を透過
-    const transparency = Math.min(100, Math.max(0, Number(alphaSlider.value) || 60)) / 100;
+    const raw = Number(alphaSlider.value);
+    const transparency = Math.min(100, Math.max(0, Number.isFinite(raw) ? raw : 60)) / 100;
     const topOpacity = 1 - transparency; // 透過率60% => opacity 0.4
     v1.classList.toggle('top', overlayTop === 'v1');
     v2.classList.toggle('top', overlayTop === 'v2');
@@ -219,14 +228,14 @@
       url1 = url;
       v1.src = url1;
       v1.load();
-      v1.muted = true;
+      v1.muted = false;
       v1.volume = Number(volumeSlider.value) / 100;
     } else {
       revoke(url2);
       url2 = url;
       v2.src = url2;
       v2.load();
-      v2.muted = true;
+      v2.muted = false;
       v2.volume = Number(volumeSlider.value) / 100;
     }
     updateButtonsState();
@@ -290,7 +299,7 @@
     v1.src = url1;
     v1.load();
     // 音量/ミュート状態を同期
-    v1.muted = true;
+    v1.muted = false;
     v1.volume = Number(volumeSlider.value) / 100;
     updateButtonsState();
     updateAudioUI();
@@ -306,7 +315,7 @@
     v2.src = url2;
     v2.load();
     // 音量/ミュート状態を同期
-    v2.muted = true;
+    v2.muted = false;
     v2.volume = Number(volumeSlider.value) / 100;
     updateButtonsState();
     updateAudioUI();
@@ -346,7 +355,14 @@
   seekSlider.addEventListener('change', () => { isSeeking = false; seekTo(Number(seekSlider.value)); });
 
   // 透過率スライダー
-  alphaSlider.addEventListener('input', () => { if (videosWrap.classList.contains('overlay')) applyOverlayState(); });
+  alphaSlider.addEventListener('input', () => {
+    if (videosWrap.classList.contains('overlay')) applyOverlayState();
+    updateAlphaCSS();
+  });
+  function updateAlphaCSS() {
+    const val = Math.max(0, Math.min(100, Number(alphaSlider.value) || 0));
+    alphaSlider.style.setProperty('--progress', String(val));
+  }
 
   // Drag & Drop イベント登録（viewer全体）
   viewerEl.addEventListener('dragenter', onDragEnter);
@@ -373,6 +389,7 @@
   updateButtonsState();
   updateAudioUI();
   updateSeekUI();
+  updateAlphaCSS();
 
   // ===== D&Dヒントの表示制御 =====
   function updateDropHints(loaded) {
@@ -497,14 +514,14 @@
       anyPlaying ? pauseBoth() : playBoth();
     }
   });
-  viewerEl.addEventListener('dblclick', (e) => {
-    if (e.target === v1 || e.target === v2) {
-      toggleFullscreen();
-    }
-  });
+  // viewerEl.addEventListener('dblclick', (e) => {
+  //   if (e.target === v1 || e.target === v2) {
+  //     toggleFullscreen();
+  //   }
+  // });
 
-  function toggleFullscreen() {
-    const el = document.fullscreenElement ? document.exitFullscreen() : viewerEl.requestFullscreen?.();
-    try { el?.catch?.(()=>{}); } catch (_) {}
-  }
+  // function toggleFullscreen() {
+  //   const el = document.fullscreenElement ? document.exitFullscreen() : viewerEl.requestFullscreen?.();
+  //   try { el?.catch?.(()=>{}); } catch (_) {}
+  // }
 })();
