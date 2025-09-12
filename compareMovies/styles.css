@@ -6,6 +6,11 @@
   --accent: #22c55e;
   --accent-2: #3b82f6;
   --border: #1f2937;
+  /* YouTube風の色味 */
+  --yt-red: #ff0000;
+  --yt-track: rgba(255,255,255,0.25);
+  --yt-track-bg: rgba(255,255,255,0.15);
+  --yt-thumb: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -68,22 +73,85 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .audio-controls input[type="range"] { width: 200px; }
 .audio-controls .tiny { padding: 4px 8px; border-radius: 8px; }
 
-.timeline-controls {
-  justify-content: center;
-  text-align: center;
+/* ===== YouTube風スライダー ===== */
+.yt-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px; /* ホバー用のヒットボックス */
+  background: transparent;
+  cursor: pointer;
+  /* 進捗とバッファの割合 (0-100) をJSから設定 */
+  --progress: 0;
+  --buffer: 0;
+  --track-h: 4px;
 }
 
-.timeline-controls, .overlay-controls {
+/* WebKit: トラック */
+.yt-slider::-webkit-slider-runnable-track {
+  height: var(--track-h);
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--yt-red) 0%,
+    var(--yt-red) calc(var(--progress) * 1%),
+    var(--yt-track) calc(var(--progress) * 1%),
+    var(--yt-track) calc(var(--buffer) * 1%),
+    var(--yt-track-bg) calc(var(--buffer) * 1%),
+    var(--yt-track-bg) 100%
+  );
+}
+
+/* WebKit: サム */
+.yt-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: calc((var(--track-h) - 12px) / 2);
+  border-radius: 50%;
+  background: var(--yt-thumb);
+  border: 0;
+  box-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+
+.yt-slider:hover { --track-h: 6px; }
+.yt-slider:active { --track-h: 8px; }
+
+/* Firefox */
+.yt-slider::-moz-range-track { height: var(--track-h); background: var(--yt-track-bg); border-radius: 999px; }
+.yt-slider::-moz-range-progress { height: var(--track-h); background: var(--yt-red); border-radius: 999px; }
+.yt-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--yt-thumb); border: none; }
+
+/* タイムラインの幅 */
+.yt-timeline { width: 100%; max-width: 900px; }
+/* ボリュームはYTっぽく短め */
+.yt-volume { width: 120px !important; }
+
+.overlay-controls {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
-.timeline-controls .seek, .overlay-controls .alpha {
+.overlay-controls .alpha {
   display: inline-flex; align-items: center; gap: 8px;
 }
-.timeline-controls input[type="range"] { width: 420px; max-width: calc(100vw - 220px); }
 .overlay-controls input[type="range"] { width: 200px; }
+
+/* YouTube風のアイコンボタンのホバー感 */
+.icon-btn {
+  position: relative;
+  overflow: hidden;
+}
+.icon-btn:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: transparent;
+}
+.icon-btn.primary {
+  background: #fff;
+  border-color: transparent;
+}
+.icon-btn:active { transform: translateY(0.5px); }
 
 .viewer {
   position: relative;
@@ -129,6 +197,19 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* 読み込み後は右下のバッジも非表示 */
 .viewer.loaded .drop-badge { display: none; }
 
+/* 動画領域下部のタイムライン（オーバーレイ） */
+.timeline-overlay {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
+  z-index: 5;
+  pointer-events: none; /* 子要素だけ操作可能にする */
+}
+.timeline-overlay .yt-timeline {
+  pointer-events: auto;
+}
+
 .videos { width: 100%; }
 .videos.side-by-side {
   display: flex;
@@ -168,3 +249,38 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .audio-overlay-controls {
   display: flex;
 }
+
+/* ===== Player controls under videos (YouTube-like) ===== */
+.player-controls {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.player-controls .timeline { display: none; }
+.player-controls .control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.player-controls .control-bar .left,
+.player-controls .control-bar .right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-controls .time {
+  color: var(--muted);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* YT風ボタン */
+.yt-btn {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.yt-btn:hover { background: rgba(255,255,255,0.08); }
+.yt-btn:disabled { opacity: 0.5; }

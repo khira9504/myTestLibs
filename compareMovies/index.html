@@ -14,6 +14,7 @@
     <main class="container">
       <section class="controls">
         <div class="file-pickers">
+          <button id="resetBoth" class="secondary" disabled>リセット</button>
           <label class="file">
             <span>動画1を選択</span>
             <input id="file1" type="file" accept="video/*" />
@@ -25,43 +26,16 @@
         </div>
 
         <div class="buttons">
-          <button id="playBoth" class="primary icon-btn" disabled title="同時再生" aria-label="同時再生">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-          </button>
-          <button id="pauseBoth" class="secondary icon-btn" disabled title="一時停止" aria-label="一時停止" style="display:none;">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
-          </button>
-          <button id="resetBoth" class="secondary" disabled>リセット</button>
           <button id="sideBySide" class="secondary" disabled>横並びで比較</button>
           <button id="overlay" class="secondary" disabled>重ねて比較</button>
           <button id="toggleTransparency" class="secondary" style="display: none;" disabled>透過切替</button>
-        </div>
-
-        <div class="audio-overlay-controls">
-          <div class="audio-controls">
-            <button id="toggleMute" class="secondary icon-btn" disabled title="音量オン/オフ" aria-label="音量オン/オフ">
-              <!-- 初期はミュート想定（JSで切替） -->
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <polygon points="3,9 7,9 12,5 12,19 7,15 3,15" fill="currentColor"></polygon>
-                <line x1="16" y1="8" x2="20" y2="12" stroke="currentColor" stroke-width="2"></line>
-                <line x1="20" y1="8" x2="16" y2="12" stroke="currentColor" stroke-width="2"></line>
-              </svg>
-            </button>
-            <label class="vol">
-              <span>音量</span>
-              <input id="volume" type="range" min="0" max="100" value="100" disabled />
-              <div class="vol-steps">
-                <button id="volDown" class="tiny" disabled>-</button>
-                <button id="volUp" class="tiny" disabled>+</button>
-              </div>
-            </label>
-          </div>
-  
-          <div class="overlay-controls">
-            <label class="alpha">
-              <span>透過率</span>
-              <input id="alpha" type="range" min="0" max="100" value="60" disabled />
-            </label>
+          <div class="audio-overlay-controls">
+            <div class="overlay-controls">
+              <label class="alpha">
+                <span>透過率</span>
+                <input id="alpha" type="range" min="0" max="100" value="60" disabled />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -81,13 +55,34 @@
           </div>
         </div>
         <div class="drop-badge">ここにドラッグ&ドロップで読み込み可能</div>
+        <!-- 動画領域の下部にタイムラインをオーバーレイ表示 -->
+        <div class="timeline-overlay">
+          <input id="seek" class="yt-slider yt-timeline" type="range" min="0" max="0" value="0" disabled />
+        </div>
       </section>
 
-      <div class="timeline-controls">
-        <label class="seek">
-          <span>再生位置</span>
-          <input id="seek" type="range" min="0" max="0" value="0" disabled />
-        </label>
+      <div class="player-controls">
+        <div class="control-bar">
+          <div class="left">
+            <button id="playBoth" class="icon-btn yt-btn" disabled title="同時再生" aria-label="同時再生">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button id="pauseBoth" class="icon-btn yt-btn" disabled title="一時停止" aria-label="一時停止" style="display:none;">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+            </button>
+            <span id="timeText" class="time">0:00 / 0:00</span>
+          </div>
+          <div class="right">
+            <button id="toggleMute" class="icon-btn yt-btn" disabled title="音量オン/オフ" aria-label="音量オン/オフ">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <polygon points="3,9 7,9 12,5 12,19 7,15 3,15" fill="currentColor"></polygon>
+                <line x1="16" y1="8" x2="20" y2="12" stroke="currentColor" stroke-width="2"></line>
+                <line x1="20" y1="8" x2="16" y2="12" stroke="currentColor" stroke-width="2"></line>
+              </svg>
+            </button>
+            <input id="volume" class="yt-slider yt-volume" type="range" min="0" max="100" value="100" disabled />
+          </div>
+        </div>
       </div>
     </main>
 

@@ -16,6 +16,7 @@
   const volumeSlider = document.getElementById('volume');
   const volDownBtn = document.getElementById('volDown');
   const volUpBtn = document.getElementById('volUp');
+  const timeText = document.getElementById('timeText');
   const seekSlider = document.getElementById('seek');
   const alphaSlider = document.getElementById('alpha');
 
@@ -42,8 +43,8 @@
     toggleTransBtn.disabled = !ready || !isOverlay;
     toggleMuteBtn.disabled = !ready;
     volumeSlider.disabled = !ready;
-    volDownBtn.disabled = !ready;
-    volUpBtn.disabled = !ready;
+    if (volDownBtn) volDownBtn.disabled = !ready;
+    if (volUpBtn) volUpBtn.disabled = !ready;
     seekSlider.disabled = !ready;
     alphaSlider.disabled = !ready || !isOverlay;
 
@@ -195,6 +196,7 @@
     const has1 = dur(v1) > 0; const has2 = dur(v2) > 0;
     const value = has1 && has2 ? (cur(v1) + cur(v2)) / 2 : (has1 ? cur(v1) : cur(v2));
     seekSlider.value = String(Math.min(max || 0, value || 0));
+    updateSeekProgressCSS();
   }
 
   function seekTo(t) {
@@ -332,9 +334,10 @@
     if (val > 0 && v1.muted && v2.muted) {
       v1.muted = false; v2.muted = false; updateAudioUI();
     }
+    updateVolumeCSS();
   });
-  volDownBtn.addEventListener('click', () => stepVolume(-0.1));
-  volUpBtn.addEventListener('click', () => stepVolume(+0.1));
+  if (volDownBtn) volDownBtn.addEventListener('click', () => stepVolume(-0.1));
+  if (volUpBtn) volUpBtn.addEventListener('click', () => stepVolume(+0.1));
 
   // シークバー操作
   seekSlider.addEventListener('mousedown', () => { isSeeking = true; });
@@ -377,4 +380,131 @@
     viewerEl.classList.toggle('loaded', isLoaded);
   }
   updateDropHints(false);
+
+  // ===== YouTube風: なめらかなタイムライン更新 (rAF) とCSS反映 =====
+  function bufferedEnd(v) {
+    try {
+      const b = v.buffered;
+      return b && b.length ? b.end(b.length - 1) : 0;
+    } catch (_) { return 0; }
+  }
+
+  function updateSeekProgressCSS() {
+    const max = Number(seekSlider.max) || 0;
+    const val = Number(seekSlider.value) || 0;
+    const progress = max > 0 ? (val / max) * 100 : 0;
+    const buf = Math.max(bufferedEnd(v1), bufferedEnd(v2));
+    const bufferPct = max > 0 ? Math.min(100, (buf / max) * 100) : 0;
+    seekSlider.style.setProperty('--progress', String(progress));
+    seekSlider.style.setProperty('--buffer', String(bufferPct));
+    updateTimeText(val, max);
+  }
+
+  function formatTime(sec) {
+    if (!Number.isFinite(sec)) return '0:00';
+    sec = Math.max(0, Math.floor(sec));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
+  function updateTimeText(curVal, maxVal) {
+    if (!timeText) return;
+    const max = Number(maxVal ?? seekSlider.max) || 0;
+    const val = Number(curVal ?? seekSlider.value) || 0;
+    timeText.textContent = `${formatTime(val)} / ${formatTime(max)}`;
+  }
+
+  function updateVolumeCSS() {
+    const v = Math.max(0, Math.min(100, Number(volumeSlider.value) || 0));
+    volumeSlider.style.setProperty('--progress', String(v));
+  }
+  updateVolumeCSS();
+
+  function rafLoop() {
+    // 再生中はcurrentTimeに追従して値を更新
+    if (!isSeeking) {
+      const max = masterDuration();
+      if (max > 0) {
+        const has1 = dur(v1) > 0; const has2 = dur(v2) > 0;
+        const value = has1 && has2 ? (cur(v1) + cur(v2)) / 2 : (has1 ? cur(v1) : cur(v2));
+        seekSlider.max = String(max);
+        seekSlider.value = String(Math.min(max, value || 0));
+        updateSeekProgressCSS();
+        updateTimeText(value, max);
+      }
+    }
+    requestAnimationFrame(rafLoop);
+  }
+  requestAnimationFrame(rafLoop);
+
+  // ===== YouTube風: キーボードショートカット =====
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const key = e.key.toLowerCase();
+    if (key === 'k' || key === ' ') {
+      e.preventDefault();
+      // トグル再生
+      const anyPlaying = (!v1.paused && !v1.ended) || (!v2.paused && !v2.ended);
+      if (anyPlaying) {
+        pauseBoth();
+      } else {
+        playBoth();
+      }
+    } else if (key === 'm') {
+      e.preventDefault();
+      toggleMuteBtn.click();
+    } else if (key === 'arrowright') {
+      e.preventDefault();
+      seekTo((Number(seekSlider.value) || 0) + 5);
+    } else if (key === 'arrowleft') {
+      e.preventDefault();
+      seekTo((Number(seekSlider.value) || 0) - 5);
+    } else if (key === 'l') {
+      e.preventDefault();
+      seekTo((Number(seekSlider.value) || 0) + 10);
+    } else if (key === 'j') {
+      e.preventDefault();
+      seekTo((Number(seekSlider.value) || 0) - 10);
+    } else if (key === 'arrowup') {
+      e.preventDefault();
+      stepVolume(+0.05);
+      updateVolumeCSS();
+    } else if (key === 'arrowdown') {
+      e.preventDefault();
+      stepVolume(-0.05);
+      updateVolumeCSS();
+    } else if (/^[0-9]$/.test(key)) {
+      // 数字キーで%シーク（YouTube風）
+      const n = Number(key);
+      const max = masterDuration();
+      if (max > 0) seekTo((max * n) / 10);
+    } else if (key === 'f') {
+      // フルスクリーン切替（YouTube風）
+      e.preventDefault();
+      toggleFullscreen();
+    }
+  });
+
+  // 動画クリックで再生/一時停止（YouTube風）
+  viewerEl.addEventListener('click', (e) => {
+    if (e.target === v1 || e.target === v2) {
+      const anyPlaying = (!v1.paused && !v1.ended) || (!v2.paused && !v2.ended);
+      anyPlaying ? pauseBoth() : playBoth();
+    }
+  });
+  viewerEl.addEventListener('dblclick', (e) => {
+    if (e.target === v1 || e.target === v2) {
+      toggleFullscreen();
+    }
+  });
+
+  function toggleFullscreen() {
+    const el = document.fullscreenElement ? document.exitFullscreen() : viewerEl.requestFullscreen?.();
+    try { el?.catch?.(()=>{}); } catch (_) {}
+  }
 })();
