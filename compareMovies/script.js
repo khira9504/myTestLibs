@@ -31,6 +31,8 @@
 
   function updateButtonsState() {
     const ready = Boolean(v1.src && v2.src);
+    const anyLoaded = Boolean(v1.src || v2.src);
+    const anyPlaying = (!v1.paused && !v1.ended && v1.readyState > 2) || (!v2.paused && !v2.ended && v2.readyState > 2);
     const isOverlay = videosWrap.classList.contains('overlay');
     playBothBtn.disabled = !ready;
     pauseBothBtn.disabled = !ready;
@@ -44,6 +46,23 @@
     volUpBtn.disabled = !ready;
     seekSlider.disabled = !ready;
     alphaSlider.disabled = !ready || !isOverlay;
+
+    // 再生/一時停止のトグル表示（未準備時は再生ボタンを表示）
+    if (!ready) {
+      playBothBtn.style.display = '';
+      pauseBothBtn.style.display = 'none';
+    } else {
+      if (anyPlaying) {
+        playBothBtn.style.display = 'none';
+        pauseBothBtn.style.display = '';
+      } else {
+        playBothBtn.style.display = '';
+        pauseBothBtn.style.display = 'none';
+      }
+    }
+
+    // D&Dヒントの表示状態更新
+    updateDropHints(anyLoaded);
   }
 
   function toSideBySide() {
@@ -67,11 +86,13 @@
   async function playBoth() {
     if (!v1.src || !v2.src) return;
     try { await Promise.allSettled([v1.play(), v2.play()]); } catch (_) {}
+    updateButtonsState();
   }
 
   function pauseBoth() {
     v1.pause();
     v2.pause();
+    updateButtonsState();
   }
 
   function resetBoth() {
@@ -97,6 +118,7 @@
     // ボタン状態更新
     updateAudioUI();
     updateButtonsState();
+    updateDropHints(false);
   }
 
   function applyOverlayState() {
@@ -127,7 +149,25 @@
   // ===== オーディオ制御 =====
   function updateAudioUI() {
     const muted = v1.muted && v2.muted;
-    toggleMuteBtn.textContent = muted ? '音声オン' : '音声オフ';
+    // 音量アイコンを動的に切替
+    if (muted) {
+      toggleMuteBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <polygon points="3,9 7,9 12,5 12,19 7,15 3,15" fill="currentColor"></polygon>
+          <line x1="16" y1="8" x2="20" y2="12" stroke="currentColor" stroke-width="2"></line>
+          <line x1="20" y1="8" x2="16" y2="12" stroke="currentColor" stroke-width="2"></line>
+        </svg>`;
+      toggleMuteBtn.setAttribute('title', '音量オフ（クリックでオン）');
+      toggleMuteBtn.setAttribute('aria-label', '音量オフ（クリックでオン）');
+    } else {
+      toggleMuteBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <polygon points="3,9 7,9 12,5 12,19 7,15 3,15" fill="currentColor"></polygon>
+          <path d="M15 8 C17 9.5, 17 14.5, 15 16" stroke="currentColor" stroke-width="2" fill="none"></path>
+        </svg>`;
+      toggleMuteBtn.setAttribute('title', '音量オン（クリックでオフ）');
+      toggleMuteBtn.setAttribute('aria-label', '音量オン（クリックでオフ）');
+    }
   }
 
   function setVolume(norm) {
@@ -253,6 +293,7 @@
     updateButtonsState();
     updateAudioUI();
     v1.addEventListener('loadedmetadata', updateSeekUI, { once: true });
+    updateDropHints(true);
   });
 
   file2.addEventListener('change', () => {
@@ -268,6 +309,7 @@
     updateButtonsState();
     updateAudioUI();
     v2.addEventListener('loadedmetadata', updateSeekUI, { once: true });
+    updateDropHints(true);
   });
 
   // ボタン
@@ -313,6 +355,12 @@
   v1.addEventListener('timeupdate', updateSeekUI);
   v2.addEventListener('timeupdate', updateSeekUI);
 
+  // 再生/一時停止状態の変化でボタン表示を更新
+  ['play','pause','ended','seeking','seeked'].forEach(ev => {
+    v1.addEventListener(ev, updateButtonsState);
+    v2.addEventListener(ev, updateButtonsState);
+  });
+
   // ページ離脱時にURL解放
   window.addEventListener('beforeunload', () => { revoke(url1); revoke(url2); });
 
@@ -322,4 +370,11 @@
   updateButtonsState();
   updateAudioUI();
   updateSeekUI();
+
+  // ===== D&Dヒントの表示制御 =====
+  function updateDropHints(loaded) {
+    const isLoaded = typeof loaded === 'boolean' ? loaded : Boolean(v1.src || v2.src);
+    viewerEl.classList.toggle('loaded', isLoaded);
+  }
+  updateDropHints(false);
 })();

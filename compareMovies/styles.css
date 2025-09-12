@@ -50,6 +50,9 @@ button {
   padding: 8px 12px;
   cursor: pointer;
 }
+/* アイコンボタンの見栄え調整 */
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.icon-btn svg { display: block; }
 button.primary { border-color: transparent; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #0b1220; font-weight: 600; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -106,7 +109,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   border-radius: 10px;
   pointer-events: none;
 }
-.viewer.dragover .drop-hint { display: flex; }
+/* 読み込み前のみD&Dヒントを表示 */
+.viewer:not(.loaded).dragover .drop-hint { display: flex; }
 .drop-hint .drop-msg { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .drop-hint strong { font-size: 16px; }
 
@@ -122,6 +126,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   padding: 4px 10px;
   pointer-events: none;
 }
+/* 読み込み後は右下のバッジも非表示 */
+.viewer.loaded .drop-badge { display: none; }
 
 .videos { width: 100%; }
 .videos.side-by-side {
