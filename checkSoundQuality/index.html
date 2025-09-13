@@ -9,7 +9,7 @@
   <body>
     <header>
       <h1>音源比較ツール</h1>
-      <p>2つの音源をアップロードして波形・Hzを比較。同時再生に対応。</p>
+      <!-- <p>2つの音源をアップロードして波形・Hzを比較。同時再生に対応。</p> -->
     </header>
 
     <main>
@@ -18,59 +18,64 @@
           <label>音源A: <input id="fileA" type="file" accept="audio/*" /></label>
           <label>音源B: <input id="fileB" type="file" accept="audio/*" /></label>
         </div>
-
-        <div class="view-toggle">
-          <span>波形表示:</span>
-          <label><input type="radio" name="view" value="side" checked />横並び</label>
-          <label><input type="radio" name="view" value="overlay" />重ねる</label>
-        </div>
-
-        <div class="playback">
-          <button id="toggleBtn" class="icon-btn" disabled aria-label="同時再生" aria-pressed="false">
-            <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5v14l11-7z"></path>
-            </svg>
-            <svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6h12v12H6z"></path>
-            </svg>
-            <!-- <span class="label label-play">同時再生</span> -->
-            <!-- <span class="label label-stop">停止</span> -->
-          </button>
-
-          <button id="resetBtn" class="icon-btn secondary" aria-label="リセット">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-5-5z"></path>
-            </svg>
-            <!-- <span class="label">リセット</span> -->
-          </button>
-        </div>
-
-        <div class="timebar" aria-live="polite">
-          <span id="timeCurrent">--</span> / <span id="timeTotal">--</span> 秒
-        </div>
       </section>
-
       <section class="meters">
         <div class="meter">
-          <div class="label">音源A</div>
-          <div>現在の主成分周波数: <span id="hzA">--</span> Hz</div>
+          <div class="label">音源A: <span id="hzA">--</span> Hz</div>
         </div>
         <div class="meter">
-          <div class="label">音源B</div>
-          <div>現在の主成分周波数: <span id="hzB">--</span> Hz</div>
+          <div class="label">音源B: <span id="hzB">--</span> Hz</div>
         </div>
       </section>
-
       <section class="canvases">
-        <div id="sideBySide" class="canvas-row">
+        <div id="sideBySide" class="canvas-row hidden">
           <canvas id="canvasA" width="900" height="180" aria-label="波形A"></canvas>
           <canvas id="canvasB" width="900" height="180" aria-label="波形B"></canvas>
         </div>
-        <div id="overlayWrap" class="canvas-row hidden">
+        <div id="overlayWrap" class="canvas-row">
           <canvas id="canvasOverlay" width="900" height="240" aria-label="重ね波形"></canvas>
         </div>
       </section>
-
+      <section class="controls">
+        <div class="view-toggle segmented" role="group" aria-label="波形表示切替">
+          <div class="timebar" aria-live="polite">
+            <span id="timeCurrent">--</span> / <span id="timeTotal">--</span> 秒
+          </div>
+          <div class="playback">
+            <button id="toggleBtn" class="icon-btn" disabled aria-label="同時再生" aria-pressed="false">
+              <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14l11-7z"></path>
+              </svg>
+              <svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6h12v12H6z"></path>
+              </svg>
+              <!-- <span class="label label-play">同時再生</span> -->
+              <!-- <span class="label label-stop">停止</span> -->
+            </button>
+  
+            <button id="resetBtn" class="icon-btn secondary" aria-label="リセット">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-5-5z"></path>
+              </svg>
+              <!-- <span class="label">リセット</span> -->
+            </button>
+          </div>
+          <button id="btnViewSide" class="icon-btn small" aria-label="横並び">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="5" width="7.5" height="14" rx="1"/>
+              <rect x="13.5" y="5" width="7.5" height="14" rx="1"/>
+            </svg>
+            <span class="label">横並び</span>
+          </button>
+          <button id="btnViewOverlay" class="icon-btn small active" aria-label="重ねる">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 9c4-6 12 6 16 0"/>
+              <path d="M4 15c4-6 12 6 16 0"/>
+            </svg>
+            <span class="label">重ねる</span>
+          </button>
+        </div>
+      </section>
       <section class="notes">
         <ul>
           <li>主成分周波数はリアルタイムのピーク周波数を推定表示します。</li>
@@ -79,9 +84,9 @@
       </section>
     </main>
 
-    <footer>
+    <!-- <footer>
       <small>Client-side Web Audio API で動作（オフライン可）</small>
-    </footer>
+    </footer> -->
 
     <script src="app.js"></script>
   </body>

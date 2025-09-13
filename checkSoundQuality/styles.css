@@ -40,6 +40,23 @@ main { padding: 16px; display: grid; gap: 16px; }
 .file-inputs label { display: inline-flex; gap: 8px; align-items: center; }
 
 .view-toggle { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+.segmented {
+  gap: 0;
+  /* border: 1px solid #2a3752; */
+  border-radius: 8px;
+  overflow: hidden;
+  /* background: #1a2233; */
+}
+.segmented .icon-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--muted);
+}
+.segmented .icon-btn + .icon-btn { border-left: 1px solid #2a3752; }
+.segmented .icon-btn.active { color: var(--text); background: #243049; }
+.icon-btn.small { padding: 6px 8px; }
+.view-toggle.segmented .icon { fill: none; stroke: currentColor; stroke-width: 2; }
 .playback { display: flex; gap: 8px; }
 
 button {
