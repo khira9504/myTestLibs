@@ -42,10 +42,8 @@ main { padding: 16px; display: grid; gap: 16px; }
 .view-toggle { display: flex; align-items: center; gap: 12px; color: var(--muted); }
 .segmented {
   gap: 0;
-  /* border: 1px solid #2a3752; */
   border-radius: 8px;
   overflow: hidden;
-  /* background: #1a2233; */
 }
 .segmented .icon-btn {
   border: none;
@@ -78,14 +76,19 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .icon-btn .icon { width: 16px; height: 16px; fill: currentColor; display: inline-block; }
 .icon-btn.secondary { background: #3a3f55; border-color: #3a3f55; }
 
-/* トグルボタンの表示（再生/停止アイコンとラベルの切替） */
-#toggleBtn { background: #1e5bb8; border-color: #1e5bb8; }
-#toggleBtn .icon-stop, #toggleBtn .label-stop { display: none; }
-#toggleBtn.playing { background: #8b2635; border-color: #8b2635; }
-#toggleBtn.playing .icon-play, #toggleBtn.playing .label-play { display: none; }
-#toggleBtn.playing .icon-stop, #toggleBtn.playing .label-stop { display: inline; }
+/* YouTube風コントロールバー */
+.controlbar { width: 100%; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55)); border: none; padding: 6px 8px; }
+.controlbar .group-left, .controlbar .group-right { display: inline-flex; gap: 8px; align-items: center; }
+.ctrl-btn { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 28px; border: none; background: transparent; color: #fff; opacity: .9; cursor: pointer; }
+.ctrl-btn .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+.ctrl-btn:hover { opacity: 1; }
+.ctrl-btn.active { color: #fff; opacity: 1; }
+.ctrl-btn:disabled { opacity: .4; cursor: not-allowed; }
+#toggleBtn .icon-pause { display: none; }
+#toggleBtn.playing .icon-play { display: none; }
+#toggleBtn.playing .icon-pause { display: inline; }
 
-.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; opacity: 0; visibility: hidden; position: absolute; }
 .meter {
   background: var(--panel);
   border: 1px solid #202634;
@@ -109,15 +112,7 @@ canvas {
   cursor: crosshair;
 }
 
-.timebar {
-  color: var(--text);
-  background: #131826;
-  border: 1px solid #202634;
-  border-radius: 6px;
-  padding: 6px 10px;
-  width: fit-content;
-  font-variant-numeric: tabular-nums;
-}
+.timebar { color: #fff; font-variant-numeric: tabular-nums; opacity: .95; }
 
 .notes {
   color: var(--muted);

@@ -39,6 +39,16 @@
   let offlineHzA = NaN;
   let offlineHzB = NaN;
   let offlineHzComputing = false;
+  // Hz安定化用パラメータと状態
+  const HZ_MIN = 60;               // 帯域下限
+  const HZ_MAX = 10000;            // 帯域上限
+  const HZ_MIN_DB = -85;           // 最低許容レベル(dB)
+  const HZ_SNR_DB_MIN = 8;         // 最低SNR(dB)
+  const HZ_SNR_DB_STRONG = 18;     // 強SNR(dB)
+  const HZ_SMOOTH_ALPHA = 0.2;     // スムージング係数
+  const HZ_JITTER_GUARD_PCT = 0.12;// ジッター抑制閾値
+  let stableHzA = NaN, stableHzB = NaN;
+  let lastShownHzA = NaN, lastShownHzB = NaN;
 
   const COLORS = {
     a: getCSS('--accent-a') || '#2E86DE',
@@ -72,7 +82,7 @@
     toggleBtn.disabled = !ready && !isPlaying; // 再生中は押せる（停止用）
     toggleBtn.classList.toggle('playing', isPlaying);
     toggleBtn.setAttribute('aria-pressed', String(isPlaying));
-    toggleBtn.setAttribute('aria-label', isPlaying ? '停止' : '同時再生');
+    toggleBtn.setAttribute('aria-label', isPlaying ? '一時停止' : '再生');
   }
 
   function clearCanvas(ctx, w, h) {
@@ -196,15 +206,18 @@
         if (!arrB || arrB.length !== analyserB.frequencyBinCount) arrB = new Float32Array(analyserB.frequencyBinCount);
         analyserA.getFloatFrequencyData(arrA);
         analyserB.getFloatFrequencyData(arrB);
-        const minHz = 40;
-        const maxHz = Math.min(12000, sr / 2);
+        const minHz = HZ_MIN;
+        const maxHz = Math.min(HZ_MAX, sr / 2);
         const minBin = Math.max(1, Math.floor(minHz / (sr / analyserA.fftSize)));
         const maxBin = Math.min(arrA.length - 1, Math.floor(maxHz / (sr / analyserA.fftSize)));
-        hzA = peakFreq(arrA, minBin, maxBin, sr, analyserA.fftSize);
+        const infoA = peakFreqWithDb(arrA, minBin, maxBin, sr, analyserA.fftSize);
         // B側も同様
         const minBinB = Math.max(1, Math.floor(minHz / (sr / analyserB.fftSize)));
         const maxBinB = Math.min(arrB.length - 1, Math.floor(maxHz / (sr / analyserB.fftSize)));
-        hzB = peakFreq(arrB, minBinB, maxBinB, sr, analyserB.fftSize);
+        const infoB = peakFreqWithDb(arrB, minBinB, maxBinB, sr, analyserB.fftSize);
+        stableHzA = stabilizeHz(stableHzA, infoA.hz, infoA.peakDb, infoA.avgDb);
+        stableHzB = stabilizeHz(stableHzB, infoB.hz, infoB.peakDb, infoB.avgDb);
+        hzA = stableHzA; hzB = stableHzB;
         offlineHzA = hzA; // 再生中の最新をキャッシュ
         offlineHzB = hzB;
         offlineHzDirty = true; // 再生停止直後に再計算するため
@@ -214,8 +227,12 @@
           offlineHzComputing = true;
           setTimeout(() => { // UIスレッド占有を避けるため次タスクで実行
             try {
-              offlineHzA = computePeakHzAt(bufferA, playheadSec);
-              offlineHzB = computePeakHzAt(bufferB, playheadSec);
+              const oA = computePeakInfoAt(bufferA, playheadSec);
+              const oB = computePeakInfoAt(bufferB, playheadSec);
+              stableHzA = stabilizeHz(stableHzA, oA.hz, oA.peakDb, oA.avgDb);
+              stableHzB = stabilizeHz(stableHzB, oB.hz, oB.peakDb, oB.avgDb);
+              offlineHzA = stableHzA;
+              offlineHzB = stableHzB;
             } finally {
               offlineHzDirty = false;
               offlineHzComputing = false;
@@ -225,8 +242,10 @@
         hzA = offlineHzA;
         hzB = offlineHzB;
       }
-      hzAEl.textContent = Number.isFinite(hzA) ? hzA.toFixed(1) : '--';
-      hzBEl.textContent = Number.isFinite(hzB) ? hzB.toFixed(1) : '--';
+      lastShownHzA = Number.isFinite(hzA) ? hzA : NaN;
+      lastShownHzB = Number.isFinite(hzB) ? hzB : NaN;
+      hzAEl.textContent = Number.isFinite(lastShownHzA) ? lastShownHzA.toFixed(1) : '--';
+      hzBEl.textContent = Number.isFinite(lastShownHzB) ? lastShownHzB.toFixed(1) : '--';
 
       // 時間表示更新 & 再生位置バー描画
       updateTimeUI();
@@ -261,6 +280,42 @@
     const p = 0.5 * (alpha - gamma) / (alpha - 2 * beta - gamma);
     const peakIndex = idx + (Number.isFinite(p) ? p : 0);
     return peakIndex * binHz;
+  }
+
+  // dB配列からピーク周波数とレベル情報
+  function peakFreqWithDb(dbArray, minBin, maxBin, sampleRate, fftSize) {
+    if (!dbArray || dbArray.length === 0) return { hz: NaN, peakDb: -Infinity, avgDb: -Infinity };
+    let maxDb = -Infinity;
+    let idx = -1;
+    let sum = 0;
+    let count = 0;
+    for (let i = minBin; i <= maxBin; i++) {
+      const v = dbArray[i];
+      if (v > maxDb) { maxDb = v; idx = i; }
+      sum += v; count++;
+    }
+    const avgDb = count ? (sum / count) : -Infinity;
+    if (idx < 0 || maxDb < HZ_MIN_DB) return { hz: NaN, peakDb: maxDb, avgDb };
+    const binHz = sampleRate / fftSize;
+    // パラボラ補間
+    const alpha = dbArray[idx - 1] ?? maxDb - 1;
+    const beta = maxDb;
+    const gamma = dbArray[idx + 1] ?? maxDb - 1;
+    const p = 0.5 * (alpha - gamma) / (alpha - 2 * beta - gamma);
+    const peakIndex = idx + (Number.isFinite(p) ? p : 0);
+    return { hz: peakIndex * binHz, peakDb: maxDb, avgDb };
+  }
+
+  // 安定化: スムージング+しきい値+ヒステリシス
+  function stabilizeHz(prev, cand, peakDb, avgDb) {
+    if (!Number.isFinite(cand)) return prev;
+    if (!Number.isFinite(prev)) return cand; // 初期値
+    if (peakDb < HZ_MIN_DB) return prev;
+    const snr = peakDb - (Number.isFinite(avgDb) ? avgDb : -120);
+    if (snr < HZ_SNR_DB_MIN) return prev;
+    const diff = Math.abs(cand - prev) / Math.max(1, prev);
+    if (diff > HZ_JITTER_GUARD_PCT && snr < HZ_SNR_DB_STRONG) return prev;
+    return prev * (1 - HZ_SMOOTH_ALPHA) + cand * HZ_SMOOTH_ALPHA;
   }
 
   function createSource(buffer, analyser) {
@@ -316,8 +371,6 @@
     analyserA = null;
     analyserB = null;
     isPlaying = false;
-    hzAEl.textContent = '--';
-    hzBEl.textContent = '--';
     updateButtons();
     offlineHzDirty = true; // 停止したのでオフライン再計算対象
     // 再生バーを消して静止波形を再描画
@@ -417,6 +470,42 @@
     ctx.restore();
   }
 
+  // Hzラベル描画
+  function drawHzBadge(canvas, t, duration, hz, color, yOffset = 6) {
+    if (!canvas || !Number.isFinite(duration) || !Number.isFinite(hz)) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width; const h = canvas.height;
+    const ratio = Math.max(0, Math.min(1, t / duration));
+    const x = Math.floor(ratio * w);
+    const text = `${hz.toFixed(1)} Hz`;
+    ctx.save();
+    ctx.font = '12px ui-sans-serif, system-ui, -apple-system, Segoe UI';
+    const pad = 4; const tw = Math.ceil(ctx.measureText(text).width);
+    const bx = Math.min(w - tw - pad*2 - 4, Math.max(4, x + 6));
+    const by = yOffset;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    roundRect(ctx, bx, by, tw + pad*2, 18, 6); ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fillText(text, bx + pad, by + 13);
+    ctx.restore();
+  }
+
+  function drawHzBadgesOverlay(canvas, t, duration) {
+    drawHzBadge(canvas, t, duration, lastShownHzA, COLORS.a, 6);
+    drawHzBadge(canvas, t, duration, lastShownHzB, COLORS.b, 28);
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
   function drawPlayheads() {
     const total = computeOverlayDuration();
     const t = Math.max(0, Math.min(playheadSec, total || Infinity));
@@ -426,10 +515,11 @@
       // 波形を再描画
       drawOverlay();
       drawPlayheadLine(canvasOverlay, t, total);
+      drawHzBadgesOverlay(canvasOverlay, t, total);
     } else {
       drawSideBySide();
-      if (bufferA) drawPlayheadLine(canvasA, t, total);
-      if (bufferB) drawPlayheadLine(canvasB, t, total);
+      if (bufferA) { drawPlayheadLine(canvasA, t, total); drawHzBadge(canvasA, t, total, lastShownHzA, COLORS.a); }
+      if (bufferB) { drawPlayheadLine(canvasB, t, total); drawHzBadge(canvasB, t, total, lastShownHzB, COLORS.b); }
     }
   }
 
@@ -445,13 +535,23 @@
   function updateTimeUI() {
     const total = computeOverlayDuration();
     if (Number.isFinite(total)) {
-      timeTotalEl.textContent = total.toFixed(2);
+      timeTotalEl.textContent = formatClock(total);
       const cur = Math.max(0, Math.min(playheadSec, total));
-      timeCurrentEl.textContent = cur.toFixed(2);
+      timeCurrentEl.textContent = formatClock(cur);
     } else {
-      timeCurrentEl.textContent = '--';
-      timeTotalEl.textContent = '--';
+      timeCurrentEl.textContent = '--:--';
+      timeTotalEl.textContent = '--:--';
     }
+  }
+
+  function formatClock(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const mm = (h > 0 ? String(m).padStart(2, '0') : String(m));
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
   }
 
   // ==== シーク（ドラッグ） ====
@@ -503,12 +603,12 @@
   canvasB.addEventListener('pointerdown', (e) => beginDrag(e, canvasB));
 
   // ==== 停止中のHz推定（オフラインFFT） ====
-  function computePeakHzAt(buffer, tSec) {
-    if (!buffer || !Number.isFinite(tSec)) return NaN;
+  function computePeakInfoAt(buffer, tSec) {
+    if (!buffer || !Number.isFinite(tSec)) return { hz: NaN, peakDb: -Infinity, avgDb: -Infinity };
     const sr = buffer.sampleRate || 44100;
     const N = 4096; // 解析窓
-    const minHz = 40;
-    const maxHz = Math.min(12000, sr / 2);
+    const minHz = HZ_MIN;
+    const maxHz = Math.min(HZ_MAX, sr / 2);
     const start = Math.floor(tSec * sr);
     const re = new Float32Array(N);
     const im = new Float32Array(N);
@@ -527,18 +627,24 @@
     const maxBin = Math.min(N / 2 - 1, Math.floor(maxHz / binHz));
     let maxMag = 0;
     let idxMax = -1;
+    let sumDb = 0; let count = 0;
     for (let k = minBin; k <= maxBin; k++) {
       const mag = re[k] * re[k] + im[k] * im[k];
       if (mag > maxMag) { maxMag = mag; idxMax = k; }
+      const db = 10 * Math.log10(mag + 1e-20);
+      sumDb += db; count++;
     }
-    if (idxMax < 0 || maxMag < 1e-8) return NaN;
+    if (idxMax < 0 || maxMag < 1e-8) return { hz: NaN, peakDb: -Infinity, avgDb: -Infinity };
     // 近傍補間（線形空間で）
     const magL = (idxMax > 0) ? (re[idxMax - 1] * re[idxMax - 1] + im[idxMax - 1] * im[idxMax - 1]) : maxMag;
     const magC = maxMag;
     const magR = (idxMax + 1 < re.length) ? (re[idxMax + 1] * re[idxMax + 1] + im[idxMax + 1] * im[idxMax + 1]) : maxMag;
     const p = 0.5 * (magL - magR) / (magL - 2 * magC - magR);
     const peakIndex = idxMax + (Number.isFinite(p) ? p : 0);
-    return peakIndex * binHz;
+    const peakHz = peakIndex * binHz;
+    const peakDb = 10 * Math.log10(maxMag + 1e-20);
+    const avgDb = count ? (sumDb / count) : -Infinity;
+    return { hz: peakHz, peakDb, avgDb };
   }
 
   function fftRadix2(re, im) {
