@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>音源比較ツール</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>音源比較ツール</h1>
+      <p>2つの音源をアップロードして波形・Hzを比較。同時再生に対応。</p>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="file-inputs">
+          <label>音源A: <input id="fileA" type="file" accept="audio/*" /></label>
+          <label>音源B: <input id="fileB" type="file" accept="audio/*" /></label>
+        </div>
+
+        <div class="view-toggle">
+          <span>波形表示:</span>
+          <label><input type="radio" name="view" value="side" checked />横並び</label>
+          <label><input type="radio" name="view" value="overlay" />重ねる</label>
+        </div>
+
+        <div class="playback">
+          <button id="playBtn" disabled>同時再生</button>
+          <button id="stopBtn" disabled>停止</button>
+          <button id="resetBtn">リセット</button>
+        </div>
+      </section>
+
+      <section class="meters">
+        <div class="meter">
+          <div class="label">音源A</div>
+          <div>現在の主成分周波数: <span id="hzA">--</span> Hz</div>
+        </div>
+        <div class="meter">
+          <div class="label">音源B</div>
+          <div>現在の主成分周波数: <span id="hzB">--</span> Hz</div>
+        </div>
+      </section>
+
+      <section class="canvases">
+        <div id="sideBySide" class="canvas-row">
+          <canvas id="canvasA" width="900" height="180" aria-label="波形A"></canvas>
+          <canvas id="canvasB" width="900" height="180" aria-label="波形B"></canvas>
+        </div>
+        <div id="overlayWrap" class="canvas-row hidden">
+          <canvas id="canvasOverlay" width="900" height="240" aria-label="重ね波形"></canvas>
+        </div>
+      </section>
+
+      <section class="notes">
+        <ul>
+          <li>主成分周波数はリアルタイムのピーク周波数を推定表示します。</li>
+          <li>再生・停止は同時に制御されます（個別再生は未対応）。</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <small>Client-side Web Audio API で動作（オフライン可）</small>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+  </html>
+
