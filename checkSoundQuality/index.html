@@ -26,9 +26,27 @@
         </div>
 
         <div class="playback">
-          <button id="playBtn" disabled>同時再生</button>
-          <button id="stopBtn" disabled>停止</button>
-          <button id="resetBtn">リセット</button>
+          <button id="toggleBtn" class="icon-btn" disabled aria-label="同時再生" aria-pressed="false">
+            <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14l11-7z"></path>
+            </svg>
+            <svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6h12v12H6z"></path>
+            </svg>
+            <span class="label label-play">同時再生</span>
+            <span class="label label-stop">停止</span>
+          </button>
+
+          <button id="resetBtn" class="icon-btn secondary" aria-label="リセット">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-5-5z"></path>
+            </svg>
+            <span class="label">リセット</span>
+          </button>
+        </div>
+
+        <div class="timebar" aria-live="polite">
+          <span id="timeCurrent">--</span> / <span id="timeTotal">--</span> 秒
         </div>
       </section>
 
@@ -68,4 +86,3 @@
     <script src="app.js"></script>
   </body>
   </html>
-

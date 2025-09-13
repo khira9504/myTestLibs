@@ -51,9 +51,22 @@ button {
   cursor: pointer;
 }
 button:disabled { opacity: .5; cursor: not-allowed; }
-button#playBtn { background: #1e5bb8; border-color: #1e5bb8; }
-button#stopBtn { background: #8b2635; border-color: #8b2635; }
-button#resetBtn { background: #3a3f55; border-color: #3a3f55; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+.icon-btn .icon { width: 16px; height: 16px; fill: currentColor; display: inline-block; }
+.icon-btn.secondary { background: #3a3f55; border-color: #3a3f55; }
+
+/* トグルボタンの表示（再生/停止アイコンとラベルの切替） */
+#toggleBtn { background: #1e5bb8; border-color: #1e5bb8; }
+#toggleBtn .icon-stop, #toggleBtn .label-stop { display: none; }
+#toggleBtn.playing { background: #8b2635; border-color: #8b2635; }
+#toggleBtn.playing .icon-play, #toggleBtn.playing .label-play { display: none; }
+#toggleBtn.playing .icon-stop, #toggleBtn.playing .label-stop { display: inline; }
 
 .meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .meter {
@@ -76,6 +89,17 @@ canvas {
   background: #0c0f17;
   border: 1px solid #202634;
   border-radius: 6px;
+  cursor: crosshair;
+}
+
+.timebar {
+  color: var(--text);
+  background: #131826;
+  border: 1px solid #202634;
+  border-radius: 6px;
+  padding: 6px 10px;
+  width: fit-content;
+  font-variant-numeric: tabular-nums;
 }
 
 .notes {
@@ -87,4 +111,3 @@ canvas {
 @media (min-width: 980px) {
   .canvas-row#sideBySide { grid-template-columns: 1fr 1fr; }
 }
-

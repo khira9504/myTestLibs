@@ -4,11 +4,12 @@
   // UI 要素
   const fileAEl = document.getElementById('fileA');
   const fileBEl = document.getElementById('fileB');
-  const playBtn = document.getElementById('playBtn');
-  const stopBtn = document.getElementById('stopBtn');
+  const toggleBtn = document.getElementById('toggleBtn');
   const resetBtn = document.getElementById('resetBtn');
   const hzAEl = document.getElementById('hzA');
   const hzBEl = document.getElementById('hzB');
+  const timeCurrentEl = document.getElementById('timeCurrent');
+  const timeTotalEl = document.getElementById('timeTotal');
   const sideWrap = document.getElementById('sideBySide');
   const overlayWrap = document.getElementById('overlayWrap');
   const canvasA = document.getElementById('canvasA');
@@ -27,6 +28,11 @@
   let analyserB = null;
   let rafId = null;
   let isPlaying = false;
+  let playheadSec = 0; // 現在位置（秒）
+  let playheadBase = 0; // currentTime - playheadSec の基準（再生中に使用）
+  let dragging = false;
+  let wasPlayingOnDrag = false;
+  let dragCanvas = null;
 
   const COLORS = {
     a: getCSS('--accent-a') || '#2E86DE',
@@ -57,8 +63,10 @@
 
   function updateButtons() {
     const ready = !!bufferA && !!bufferB;
-    playBtn.disabled = !ready || isPlaying;
-    stopBtn.disabled = !ready || !isPlaying;
+    toggleBtn.disabled = !ready && !isPlaying; // 再生中は押せる（停止用）
+    toggleBtn.classList.toggle('playing', isPlaying);
+    toggleBtn.setAttribute('aria-pressed', String(isPlaying));
+    toggleBtn.setAttribute('aria-label', isPlaying ? '停止' : '同時再生');
   }
 
   function clearCanvas(ctx, w, h) {
@@ -168,30 +176,39 @@
   }
 
   function startVisualLoop() {
-    cancelVisualLoop();
-    const binCount = analyserA ? analyserA.frequencyBinCount : 0;
-    const arrA = new Float32Array(binCount);
-    const arrB = new Float32Array(binCount);
-    const sr = audioCtx.sampleRate;
-
-    const minHz = 40;
-    const maxHz = Math.min(12000, sr / 2);
-    const minBin = Math.max(1, Math.floor(minHz / (sr / analyserA.fftSize)));
-    const maxBin = Math.min(binCount - 1, Math.floor(maxHz / (sr / analyserA.fftSize)));
-
+    if (rafId) return; // 多重起動防止
+    let arrA = null;
+    let arrB = null;
     const tick = () => {
-      if (!isPlaying) {
-        rafId = requestAnimationFrame(tick);
-        return;
+      // 再生中は進行更新
+      if (isPlaying && audioCtx) {
+        playheadSec = Math.max(0, audioCtx.currentTime - playheadBase);
       }
-      if (analyserA) analyserA.getFloatFrequencyData(arrA);
-      if (analyserB) analyserB.getFloatFrequencyData(arrB);
 
-      const hzA = peakFreq(arrA, minBin, maxBin, sr, analyserA?.fftSize || 2048);
-      const hzB = peakFreq(arrB, minBin, maxBin, sr, analyserB?.fftSize || 2048);
-
+      // 周波数ピーク推定（再生中のみ、かつアナライザがある場合）
+      let hzA = NaN, hzB = NaN;
+      if (analyserA && analyserB && audioCtx) {
+        const sr = audioCtx.sampleRate;
+        if (!arrA || arrA.length !== analyserA.frequencyBinCount) arrA = new Float32Array(analyserA.frequencyBinCount);
+        if (!arrB || arrB.length !== analyserB.frequencyBinCount) arrB = new Float32Array(analyserB.frequencyBinCount);
+        analyserA.getFloatFrequencyData(arrA);
+        analyserB.getFloatFrequencyData(arrB);
+        const minHz = 40;
+        const maxHz = Math.min(12000, sr / 2);
+        const minBin = Math.max(1, Math.floor(minHz / (sr / analyserA.fftSize)));
+        const maxBin = Math.min(arrA.length - 1, Math.floor(maxHz / (sr / analyserA.fftSize)));
+        hzA = peakFreq(arrA, minBin, maxBin, sr, analyserA.fftSize);
+        // B側も同様
+        const minBinB = Math.max(1, Math.floor(minHz / (sr / analyserB.fftSize)));
+        const maxBinB = Math.min(arrB.length - 1, Math.floor(maxHz / (sr / analyserB.fftSize)));
+        hzB = peakFreq(arrB, minBinB, maxBinB, sr, analyserB.fftSize);
+      }
       hzAEl.textContent = Number.isFinite(hzA) ? hzA.toFixed(1) : '--';
       hzBEl.textContent = Number.isFinite(hzB) ? hzB.toFixed(1) : '--';
+
+      // 時間表示更新 & 再生位置バー描画
+      updateTimeUI();
+      drawPlayheads();
 
       rafId = requestAnimationFrame(tick);
     };
@@ -233,30 +250,37 @@
   }
 
   async function handlePlay() {
+    // 現在の playheadSec から再生
+    await startPlaybackFrom(playheadSec);
+  }
+
+  async function startPlaybackFrom(offsetSec) {
     if (!bufferA || !bufferB) return;
     ensureAudioContext();
     await audioCtx.resume();
+
+    // オフセットを共通の再生長（min）に収める
+    const total = computeOverlayDuration();
+    const epsilon = 1e-3;
+    const safeOffset = Math.min(Math.max(0, offsetSec), Math.max(0, (total || 0) - epsilon));
+    playheadSec = safeOffset;
 
     setupAnalysers();
     sourceA = createSource(bufferA, analyserA);
     sourceB = createSource(bufferB, analyserB);
 
-    const startAt = audioCtx.currentTime + 0.08; // 同期のため少し先に
+    const startAt = audioCtx.currentTime + 0.05; // わずかに先送りで同期
     try {
-      sourceA.start(startAt);
-      sourceB.start(startAt);
-    } catch (_) {
-      // すでにスタート済みなどは握りつぶし
-    }
+      sourceA.start(startAt, Math.min(safeOffset, Math.max(0, bufferA.duration - epsilon)));
+      sourceB.start(startAt, Math.min(safeOffset, Math.max(0, bufferB.duration - epsilon)));
+    } catch (_) { /* no-op */ }
 
+    // 再生中時間 = currentTime - base
+    playheadBase = startAt - safeOffset;
     isPlaying = true;
     updateButtons();
-    startVisualLoop();
 
-    const onEnded = () => {
-      // どちらかが終了したら停止扱い
-      stopPlayback();
-    };
+    const onEnded = () => stopPlayback();
     sourceA.addEventListener('ended', onEnded, { once: true });
     sourceB.addEventListener('ended', onEnded, { once: true });
   }
@@ -269,10 +293,11 @@
     analyserA = null;
     analyserB = null;
     isPlaying = false;
-    cancelVisualLoop();
     hzAEl.textContent = '--';
     hzBEl.textContent = '--';
     updateButtons();
+    // 再生バーを消して静止波形を再描画
+    redraw();
   }
 
   function resetAll() {
@@ -281,6 +306,7 @@
     bufferB = null;
     fileAEl.value = '';
     fileBEl.value = '';
+    playheadSec = 0;
     hzAEl.textContent = '--';
     hzBEl.textContent = '--';
     // キャンバス消去
@@ -310,6 +336,7 @@
   fileAEl.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     bufferA = file ? await loadFileToBuffer(file) : null;
+    playheadSec = 0;
     redraw();
     updateButtons();
   });
@@ -317,13 +344,17 @@
   fileBEl.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     bufferB = file ? await loadFileToBuffer(file) : null;
+    playheadSec = 0;
     redraw();
     updateButtons();
   });
 
-  playBtn.addEventListener('click', handlePlay);
-  stopBtn.addEventListener('click', () => {
-    stopPlayback();
+  toggleBtn.addEventListener('click', async () => {
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      await handlePlay();
+    }
   });
   resetBtn.addEventListener('click', () => {
     resetAll();
@@ -333,4 +364,108 @@
 
   // 初期描画
   applyViewMode();
+  startVisualLoop();
+
+  // 再生位置用ヘルパー
+  function drawPlayheadLine(canvas, t, duration) {
+    if (!canvas || !duration || !isFinite(duration)) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const ratio = Math.max(0, Math.min(1, t / duration));
+    const x = Math.floor(ratio * w) + 0.5;
+    ctx.save();
+    ctx.strokeStyle = getCSS('--text') || '#e6e6e6';
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPlayheads() {
+    const total = computeOverlayDuration();
+    const t = Math.max(0, Math.min(playheadSec, total || Infinity));
+    const mode = getViewMode();
+
+    if (mode === 'overlay') {
+      // 波形を再描画
+      drawOverlay();
+      drawPlayheadLine(canvasOverlay, t, total);
+    } else {
+      drawSideBySide();
+      if (bufferA) drawPlayheadLine(canvasA, t, total);
+      if (bufferB) drawPlayheadLine(canvasB, t, total);
+    }
+  }
+
+  function computeOverlayDuration() {
+    const dA = bufferA?.duration || NaN;
+    const dB = bufferB?.duration || NaN;
+    if (Number.isFinite(dA) && Number.isFinite(dB)) return Math.min(dA, dB);
+    if (Number.isFinite(dA)) return dA;
+    if (Number.isFinite(dB)) return dB;
+    return NaN;
+  }
+
+  function updateTimeUI() {
+    const total = computeOverlayDuration();
+    if (Number.isFinite(total)) {
+      timeTotalEl.textContent = total.toFixed(2);
+      const cur = Math.max(0, Math.min(playheadSec, total));
+      timeCurrentEl.textContent = cur.toFixed(2);
+    } else {
+      timeCurrentEl.textContent = '--';
+      timeTotalEl.textContent = '--';
+    }
+  }
+
+  // ==== シーク（ドラッグ） ====
+  function canvasClientXToRatio(canvas, clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    return rect.width > 0 ? x / rect.width : 0;
+  }
+
+  function beginDrag(e, canvas) {
+    if (!bufferA && !bufferB) return;
+    dragging = true;
+    wasPlayingOnDrag = isPlaying;
+    if (isPlaying) stopPlayback();
+    dragCanvas = canvas;
+    updateDrag(e, canvas);
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', endDrag, { once: true });
+    window.addEventListener('pointercancel', endDrag, { once: true });
+  }
+
+  function updateDrag(e, canvas) {
+    const total = computeOverlayDuration();
+    if (!Number.isFinite(total)) return;
+    const ratio = canvasClientXToRatio(canvas, e.clientX);
+    playheadSec = Math.max(0, Math.min(total, ratio * total));
+    updateTimeUI();
+    drawPlayheads();
+  }
+
+  function onDragMove(e) {
+    const mode = getViewMode();
+    if (mode === 'overlay') updateDrag(e, canvasOverlay);
+    else updateDrag(e, dragCanvas || canvasA); // 横並び時は開始したキャンバス基準
+  }
+
+  async function endDrag() {
+    window.removeEventListener('pointermove', onDragMove);
+    dragging = false;
+    if (wasPlayingOnDrag) {
+      await startPlaybackFrom(playheadSec);
+    }
+  }
+
+  // クリック/ドラッグ シーク登録
+  canvasOverlay.addEventListener('pointerdown', (e) => beginDrag(e, canvasOverlay));
+  canvasA.addEventListener('pointerdown', (e) => beginDrag(e, canvasA));
+  canvasB.addEventListener('pointerdown', (e) => beginDrag(e, canvasB));
 })();
