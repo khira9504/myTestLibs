@@ -1,0 +1,15 @@
+node_modules/
+# check-metadata.js
+# check-config.json
+# .gitignore
+# package.json
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+# bun.lockb
+# .DS_Store
+# .env
+# .env.local
+# .env.development.local
+# .env.test.local
+# .env.production.local

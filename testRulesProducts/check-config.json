@@ -1,0 +1,13 @@
+{
+  "required": {
+    "title": true,
+    "description": true,
+    "og:site_name": true,
+    "og:type": true,
+    "og:url": true,
+    "og:image": true,
+    "og:description": true,
+    "google-tag-manager": true,
+    "a-href": true
+  }
+}

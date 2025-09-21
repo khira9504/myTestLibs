@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "check": "node scripts/check-metadata.js"
+  },
+  "devDependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "glob": "^10.0.0"
+  }
+}
